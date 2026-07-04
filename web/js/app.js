@@ -23,9 +23,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // WS status
   WS.on('status', (state) => {
     switch (state) {
-      case 'connected':    setStatus('connected',    'Connected');    break;
-      case 'connecting':   setStatus('connecting',   'Connecting…'); break;
-      case 'disconnected': setStatus('disconnected', 'Not Connected'); break;
+      case 'connected':
+        setStatus('connected', 'Connected');
+        WS._send({ type: 'token_request' });
+        break;
+      case 'connecting':
+        setStatus('connecting', 'Connecting…');
+        break;
+      case 'disconnected':
+        setStatus('disconnected', 'Not Connected');
+        break;
     }
   });
 
@@ -61,13 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Connect to local Pi server (always localhost from browser's perspective)
   const localHost = location.hostname || '127.0.0.1';
   WS.connect(localHost, 7001);
-
-  // Request token on connect
-  WS.on('status', (state) => {
-    if (state === 'connected') {
-      WS._send({ type: 'token_request' });
-    }
-  });
 
   // Prevent context menu
   document.addEventListener('contextmenu', (e) => e.preventDefault());

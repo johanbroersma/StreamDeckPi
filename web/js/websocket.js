@@ -81,6 +81,9 @@ const WS = {
           this._emit('config_updated');
         }
         break;
+      case 'token_info':
+        this._emit('token_info', msg.token);
+        break;
       case 'error':
         this._emit('error', msg.message);
         break;

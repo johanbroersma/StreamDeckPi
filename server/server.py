@@ -111,6 +111,9 @@ async def ws_ui_handler(request):
         'connected': agent_ws is not None and not agent_ws.closed,
     }))
 
+    # Always send token to UI immediately on connect
+    await ws.send_str(json.dumps({'type': 'token_info', 'token': AGENT_TOKEN}))
+
     if config_cache:
         await ws.send_str(json.dumps({'type': 'config_push', 'config': config_cache}))
 
@@ -351,7 +354,7 @@ async def download_handler(request):
 
 def _serve_html(path: Path):
     if path.exists():
-        return web.FileResponse(path)
+        return web.FileResponse(path, headers={'Cache-Control': 'no-store'})
     return web.Response(text='Not found', status=404)
 
 

@@ -24,7 +24,7 @@ function showTab(id) {
 
 // ── Token ──────────────────────────────────────────────────
 
-let _tokenVisible = false;
+let _tokenVisible = true;
 let _token = '';
 
 function setToken(tok) {
