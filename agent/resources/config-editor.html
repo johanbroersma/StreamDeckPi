@@ -395,6 +395,7 @@
     { key: 'text',     label: 'Text'     },
     { key: 'url',      label: 'URL'      },
     { key: 'script',   label: 'Script'   },
+    { key: 'rtsp',     label: 'Camera'   },
   ];
 
   const MEDIA_OPTIONS = [
@@ -658,6 +659,7 @@
       text:     'Text to type…',
       url:      'https://…',
       script:   'Shell command…',
+      rtsp:     'rtsp://192.168.1.x:554/stream',
     };
     return map[type] || '';
   }

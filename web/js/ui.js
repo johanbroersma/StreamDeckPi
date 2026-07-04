@@ -61,6 +61,20 @@ function showDownloadPage() {
   window.open('/download/', '_blank');
 }
 
+// ── Camera view ────────────────────────────────────────────
+
+function showCameraView(url, label) {
+  document.getElementById('camera-label').textContent = label || '';
+  document.getElementById('camera-feed').src =
+    '/api/camera/stream?url=' + encodeURIComponent(url);
+  showView('camera');
+}
+
+function closeCameraView() {
+  document.getElementById('camera-feed').src = '';
+  showView('app');
+}
+
 // ── Toast ──────────────────────────────────────────────────
 
 let _toastTimer = null;
@@ -206,6 +220,12 @@ function handleButtonPress(idx) {
     return;
   }
 
+  // Camera streams are handled locally on the Pi display
+  if (btn.action_type === 'rtsp' && btn.action) {
+    showCameraView(btn.action, btn.label);
+    return;
+  }
+
   // Visual feedback
   const el = document.querySelector(`.deck-btn[data-idx="${idx}"]`);
   if (el) {
@@ -254,6 +274,7 @@ function openEditor(idx) {
     case 'text':     document.getElementById('edit-text').value     = av; break;
     case 'url':      document.getElementById('edit-url').value      = av; break;
     case 'script':   document.getElementById('edit-script').value   = av; break;
+    case 'rtsp':     document.getElementById('edit-rtsp').value     = av; break;
   }
 
   updateActionFields();
@@ -264,7 +285,7 @@ function openEditor(idx) {
 
 function updateActionFields() {
   const at = document.getElementById('edit-action-type').value;
-  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script'];
+  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script', 'rtsp'];
   allFields.forEach(f => {
     const el = document.getElementById('action-' + f);
     if (el) el.classList.toggle('hidden', f !== at);
@@ -307,6 +328,7 @@ function saveButton() {
     case 'text':     action = document.getElementById('edit-text').value;     break;
     case 'url':      action = document.getElementById('edit-url').value;      break;
     case 'script':   action = document.getElementById('edit-script').value;   break;
+    case 'rtsp':     action = document.getElementById('edit-rtsp').value;     break;
   }
 
   const selected = document.querySelector('.color-swatch.selected');

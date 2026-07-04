@@ -358,6 +358,68 @@ def _serve_html(path: Path):
     return web.Response(text='Not found', status=404)
 
 
+# ── Camera RTSP → MJPEG proxy ─────────────────────────────────
+
+async def camera_stream_handler(request):
+    url = request.rel_url.query.get('url', '')
+    if not url:
+        raise web.HTTPBadRequest(reason='Missing url parameter')
+
+    response = web.StreamResponse(headers={
+        'Content-Type':  'multipart/x-mixed-replace; boundary=frame',
+        'Cache-Control': 'no-cache',
+        'Connection':    'keep-alive',
+    })
+    await response.prepare(request)
+
+    proc = await asyncio.create_subprocess_exec(
+        'ffmpeg',
+        '-rtsp_transport', 'tcp',
+        '-i', url,
+        '-f', 'mjpeg',
+        '-q:v', '5',
+        '-vf', 'fps=15,scale=800:-1',
+        'pipe:1',
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+    )
+
+    try:
+        buf = b''
+        while True:
+            chunk = await proc.stdout.read(8192)
+            if not chunk:
+                break
+            buf += chunk
+            while True:
+                start = buf.find(b'\xff\xd8')
+                if start == -1:
+                    buf = b''
+                    break
+                end = buf.find(b'\xff\xd9', start + 2)
+                if end == -1:
+                    buf = buf[start:]
+                    break
+                frame = buf[start:end + 2]
+                buf = buf[end + 2:]
+                try:
+                    await response.write(
+                        b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n'
+                    )
+                except Exception:
+                    return response
+    except asyncio.CancelledError:
+        pass
+    finally:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        await proc.wait()
+
+    return response
+
+
 # ── App setup ─────────────────────────────────────────────────
 
 def create_app():
@@ -375,6 +437,7 @@ def create_app():
     app.router.add_get('/api/wifi/scan',   wifi_scan_handler)
     app.router.add_post('/api/wifi/connect',    wifi_connect_handler)
     app.router.add_post('/api/wifi/disconnect', wifi_disconnect_handler)
+    app.router.add_get('/api/camera/stream',    camera_stream_handler)
 
     # Static files
     if WEB_DIR.exists():

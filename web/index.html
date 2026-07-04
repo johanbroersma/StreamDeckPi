@@ -212,6 +212,7 @@
             <option value="text">Type Text</option>
             <option value="url">Open URL</option>
             <option value="script">Run Script</option>
+            <option value="rtsp">Camera Stream (RTSP)</option>
           </select>
         </div>
         <div class="field-row" id="action-shortcut">
@@ -245,9 +246,20 @@
           <label>Script</label>
           <textarea id="edit-script" placeholder="echo hello" rows="3"></textarea>
         </div>
+        <div class="field-row hidden" id="action-rtsp">
+          <label>RTSP URL</label>
+          <input type="text" id="edit-rtsp" placeholder="rtsp://192.168.1.x:554/stream" />
+        </div>
         <button class="btn-primary" onclick="saveButton()">Save Button</button>
       </div>
     </div>
+  </div>
+
+  <!-- ── Camera view ───────────────────────────────────────── -->
+  <div id="camera" class="view camera-view">
+    <button class="camera-back-btn" onclick="closeCameraView()">&#8592; Back</button>
+    <div class="camera-label" id="camera-label"></div>
+    <img id="camera-feed" src="" alt="Camera feed" />
   </div>
 
   <!-- ── Toast ──────────────────────────────────────────────── -->
@@ -264,10 +276,10 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=2"></script>
-  <script src="js/websocket.js?v=2"></script>
-  <script src="js/ui.js?v=2"></script>
-  <script src="js/wifi.js?v=2"></script>
-  <script src="js/app.js?v=2"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/websocket.js?v=3"></script>
+  <script src="js/ui.js?v=3"></script>
+  <script src="js/wifi.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>
