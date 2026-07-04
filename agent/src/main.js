@@ -179,7 +179,7 @@ ipcMain.handle('get-config', () => config);
 
 ipcMain.on('set-config', (event, newConfig) => {
   config = newConfig;
-  send({ type: 'config_sync', config });
+  send({ type: 'config_push', config });
   if (configWin) configWin.webContents.send('config-update', config);
 });
 
