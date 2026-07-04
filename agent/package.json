@@ -2,11 +2,16 @@
   "name": "streamdeck-pi-agent",
   "version": "1.0.0",
   "description": "Pi Stream Deck desktop agent for macOS and Windows",
+  "author": "Johan Broersma",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johanbroersma/StreamDeckPi.git"
+  },
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "electron-builder --mac",
-    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac --publish always",
+    "build:win": "electron-builder --win --publish always",
     "build:linux": "electron-builder --linux"
   },
   "dependencies": {
@@ -20,6 +25,11 @@
   "build": {
     "appId": "com.streamdeckpi.agent",
     "productName": "StreamDeck Pi Agent",
+    "publish": {
+      "provider": "github",
+      "owner": "johanbroersma",
+      "repo": "StreamDeckPi"
+    },
     "mac": {
       "category": "public.app-category.utilities",
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }]
