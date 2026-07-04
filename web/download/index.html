@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamDeck Pi — Download Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5; color: #1a1a1a; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 40px 16px;
+    }
+    .header { text-align: center; margin-bottom: 40px; }
+    .header h1 { font-size: 28px; font-weight: 800; color: #e2640f; margin-bottom: 8px; }
+    .header p  { color: #666; font-size: 16px; }
+
+    .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 800px; }
+
+    .card {
+      background: white; border-radius: 16px; padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.1); width: 340px;
+    }
+    .card-icon { font-size: 48px; margin-bottom: 12px; }
+    .card h2   { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .card p    { font-size: 14px; color: #666; margin-bottom: 18px; line-height: 1.5; }
+
+    .btn-download {
+      display: block; width: 100%; padding: 13px 20px;
+      background: #e2640f; color: white; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; text-decoration: none; text-align: center;
+      cursor: pointer; margin-bottom: 10px; transition: background .15s;
+    }
+    .btn-download:hover { background: #c0520c; }
+    .btn-download.secondary {
+      background: #f0f0f0; color: #333;
+    }
+    .btn-download.secondary:hover { background: #e0e0e0; }
+
+    .token-section {
+      background: white; border-radius: 16px; padding: 24px 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.1); width: 100%; max-width: 720px;
+      margin-top: 20px;
+    }
+    .token-section h2 { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+    .token-box {
+      background: #f5f5f5; border-radius: 8px; padding: 12px 16px;
+      font-family: monospace; font-size: 15px; letter-spacing: .05em;
+      word-break: break-all; margin-bottom: 10px; color: #333;
+    }
+    .token-hint { font-size: 13px; color: #888; }
+
+    .steps { margin-top: 14px; padding-left: 18px; }
+    .steps li { font-size: 13px; color: #555; margin-bottom: 6px; line-height: 1.5; }
+    code {
+      background: #f0f0f0; border-radius: 4px; padding: 2px 6px;
+      font-size: 12px; font-family: monospace;
+    }
+
+    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>StreamDeck Pi Agent</h1>
+    <p>Install the agent on your Mac or Windows PC to control it from your Pi Stream Deck</p>
+  </div>
+
+  <div class="cards">
+    <!-- macOS -->
+    <div class="card">
+      <div class="card-icon">🍎</div>
+      <h2>macOS</h2>
+      <p>Supports macOS 11+ on both Intel and Apple Silicon (M1/M2/M3).</p>
+      <a class="btn-download" id="mac-arm-btn" href="#">Download for Apple Silicon</a>
+      <a class="btn-download secondary" id="mac-intel-btn" href="#">Download for Intel Mac</a>
+      <ol class="steps">
+        <li>Download and open the <code>.dmg</code> file</li>
+        <li>Drag StreamDeck Pi Agent to Applications</li>
+        <li>Open it — look for the 🟠 icon in the menu bar</li>
+        <li>Click the icon → Settings, enter your token below</li>
+      </ol>
+    </div>
+
+    <!-- Windows -->
+    <div class="card">
+      <div class="card-icon">🪟</div>
+      <h2>Windows</h2>
+      <p>Supports Windows 10 and Windows 11 (64-bit).</p>
+      <a class="btn-download" id="win-btn" href="#">Download for Windows</a>
+      <ol class="steps">
+        <li>Download and run the <code>.exe</code> installer</li>
+        <li>StreamDeck Pi Agent starts automatically</li>
+        <li>Find it in the system tray (bottom-right)</li>
+        <li>Right-click → Settings, enter your token below</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Token -->
+  <div class="token-section">
+    <h2>🔐 Security Token</h2>
+    <div class="token-box" id="token-display">Loading…</div>
+    <p class="token-hint">Copy this token and paste it into the agent's Settings window to allow it to connect to your Pi Stream Deck.</p>
+  </div>
+
+  <div class="footer">StreamDeck Pi &nbsp;·&nbsp; Running on <span id="hostname"></span></div>
+
+  <script>
+    const BASE = window.location.origin;
+
+    async function init() {
+      try {
+        const r = await fetch('/api/agent-info');
+        const info = await r.json();
+
+        document.getElementById('token-display').textContent = info.token;
+        document.getElementById('hostname').textContent = info.hostname || info.mdns;
+
+        // Point download links to GitHub releases (update URL with your repo)
+        const releaseBase = `https://github.com/johanbroersma/StreamDeckPi/releases/latest/download`;
+        document.getElementById('mac-arm-btn').href   = `${releaseBase}/StreamDeck-Pi-Agent-arm64.dmg`;
+        document.getElementById('mac-intel-btn').href = `${releaseBase}/StreamDeck-Pi-Agent-x64.dmg`;
+        document.getElementById('win-btn').href       = `${releaseBase}/StreamDeck-Pi-Agent-Setup.exe`;
+      } catch (e) {
+        document.getElementById('token-display').textContent = 'Could not load token — try refreshing';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

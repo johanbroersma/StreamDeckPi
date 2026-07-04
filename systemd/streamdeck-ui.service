@@ -1,0 +1,33 @@
+# NOTE: This service is NOT used. The kiosk is launched via:
+#   /etc/systemd/system/getty@tty1.service.d/autologin.conf  (auto-login admin on TTY1)
+#   /home/admin/.bash_profile                                 (cage + chromium when on TTY1)
+#
+# cage must own the DRM/KMS seat via logind — a system service cannot get
+# seat access without a logind session. The TTY auto-login approach works reliably.
+#
+# This file is kept here as documentation only.
+
+[Unit]
+Description=Pi Stream Deck — Kiosk UI (cage + chromium)
+After=streamdeck-server.service
+Requires=streamdeck-server.service
+
+[Service]
+Type=simple
+User=admin
+# Unset Wayland/X display vars so cage uses DRM backend directly
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=XDG_SESSION_TYPE=drm
+UnsetEnvironment=WAYLAND_DISPLAY DISPLAY
+ExecStart=/usr/bin/cage -- /usr/bin/chromium \
+    --kiosk \
+    --no-sandbox \
+    --disable-dev-shm-usage \
+    --use-gl=egl \
+    --hide-scrollbars \
+    http://127.0.0.1:7001/
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'">
+  <title>StreamDeck Pi Agent — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5; color: #1a1a1a;
+      padding: 20px; user-select: none;
+    }
+    h1 { font-size: 17px; font-weight: 700; color: #e2640f; margin-bottom: 16px; }
+    h2 { font-size: 12px; font-weight: 700; text-transform: uppercase;
+         letter-spacing: .06em; color: #888; margin-bottom: 8px; }
+    .card {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot.ok   { background: #43a047; }
+    .dot.no   { background: #e53935; }
+    .dot.spin { background: #ffa726; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .status-text { font-size: 13px; color: #555; }
+
+    .field { margin-bottom: 10px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 4px; }
+    input[type=text], input[type=number], input[type=password] {
+      width: 100%; padding: 8px 10px; border: 1px solid #ddd;
+      border-radius: 7px; font-size: 13px;
+    }
+    input:focus { outline: none; border-color: #e2640f; }
+    .hint { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+    .discovered { margin-top: 8px; }
+    .device-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; background: #f0f7ff; border-radius: 7px;
+      margin-bottom: 5px; font-size: 13px;
+    }
+    .device-item button {
+      background: #e2640f; color: white; border: none; border-radius: 5px;
+      padding: 4px 10px; font-size: 12px; cursor: pointer;
+    }
+    .no-devices { font-size: 12px; color: #aaa; font-style: italic; }
+
+    .token-row { display: flex; gap: 8px; align-items: center; }
+    .token-row input { flex: 1; font-family: monospace; font-size: 12px; }
+    .btn-sm {
+      background: #eee; border: none; border-radius: 6px;
+      padding: 6px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-sm:hover { background: #ddd; }
+
+    .checkbox-row { display: flex; align-items: center; gap: 8px; }
+    .checkbox-row input { width: auto; }
+    .checkbox-row label { margin: 0; font-weight: 400; color: #333; font-size: 13px; }
+
+    button.primary {
+      width: 100%; padding: 10px;
+      background: #e2640f; color: white;
+      border: none; border-radius: 9px;
+      font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px;
+    }
+    button.primary:hover { background: #c0520c; }
+    button.primary:active { background: #a04008; }
+  </style>
+</head>
+<body>
+  <h1>StreamDeck Pi Agent</h1>
+
+  <!-- Status -->
+  <div class="card">
+    <h2>Status</h2>
+    <div class="status-row">
+      <div class="dot no" id="dot"></div>
+      <span class="status-text" id="status-text">Checking…</span>
+    </div>
+  </div>
+
+  <!-- Auto-discovery -->
+  <div class="card">
+    <h2>Discovered Devices</h2>
+    <div class="checkbox-row" style="margin-bottom:10px">
+      <input type="checkbox" id="auto-discover" checked>
+      <label for="auto-discover">Auto-connect to discovered Pi</label>
+    </div>
+    <div class="discovered" id="discovered-list">
+      <div class="no-devices">Searching for devices…</div>
+    </div>
+  </div>
+
+  <!-- Manual connection -->
+  <div class="card">
+    <h2>Manual Connection</h2>
+    <div class="field">
+      <label>Pi IP / Hostname</label>
+      <input type="text" id="host" placeholder="192.168.1.100 or streamdeckpi.local" />
+      <div class="hint">Leave blank to use auto-discovery only</div>
+    </div>
+    <div class="field">
+      <label>Port</label>
+      <input type="number" id="port" value="7001" />
+    </div>
+    <div class="field">
+      <label>Security Token</label>
+      <div class="token-row">
+        <input type="password" id="token" placeholder="Paste token from Pi settings" />
+        <button class="btn-sm" onclick="toggleToken()">Show</button>
+      </div>
+      <div class="hint">Find the token on the Pi: Settings → Connection → Token</div>
+    </div>
+    <button class="primary" onclick="save()">Connect</button>
+  </div>
+
+  <script>
+    let settings = {};
+    let tokenVisible = false;
+
+    async function init() {
+      settings = await window.electronAPI.getSettings();
+
+      document.getElementById('host').value         = settings.host  || '';
+      document.getElementById('port').value         = settings.port  || 7001;
+      document.getElementById('token').value        = settings.token || '';
+      document.getElementById('auto-discover').checked = settings.autoDiscover !== false;
+
+      const dot  = document.getElementById('dot');
+      const text = document.getElementById('status-text');
+      if (settings.connected) {
+        dot.className = 'dot ok';
+        text.textContent = `Connected to ${settings.host}`;
+      } else {
+        dot.className = 'dot no';
+        text.textContent = 'Not connected';
+      }
+
+      renderDiscovered(settings.discovered || []);
+    }
+
+    function renderDiscovered(devices) {
+      const el = document.getElementById('discovered-list');
+      if (!devices.length) {
+        el.innerHTML = '<div class="no-devices">No devices found yet…</div>';
+        return;
+      }
+      el.innerHTML = devices.map(d => `
+        <div class="device-item">
+          <span>${d.name} <span style="color:#aaa;font-size:11px">${d.host}:${d.port}</span></span>
+          <button onclick="useDevice('${d.host}', ${d.port})">Use</button>
+        </div>`).join('');
+    }
+
+    function useDevice(host, port) {
+      document.getElementById('host').value = host;
+      document.getElementById('port').value = port;
+    }
+
+    function toggleToken() {
+      tokenVisible = !tokenVisible;
+      document.getElementById('token').type = tokenVisible ? 'text' : 'password';
+    }
+
+    function save() {
+      window.electronAPI.saveSettings({
+        host:         document.getElementById('host').value.trim(),
+        port:         parseInt(document.getElementById('port').value) || 7001,
+        token:        document.getElementById('token').value.trim(),
+        autoDiscover: document.getElementById('auto-discover').checked,
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

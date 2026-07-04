@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800, initial-scale=1.0, user-scalable=no">
+  <title>Stream Deck Pi</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ── Main Stream Deck View ─────────────────────────────── -->
+  <div id="app" class="view active">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div id="status-indicator" class="status-dot disconnected"></div>
+        <span id="status-label" class="status-label">Not Connected</span>
+      </div>
+      <div class="topbar-center">
+        <div class="page-indicator">
+          <button class="page-btn" id="prev-page" onclick="changePage(-1)">&#8249;</button>
+          <span id="page-label">Page 1</span>
+          <button class="page-btn" id="next-page" onclick="changePage(1)">&#8250;</button>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" onclick="showView('settings')">&#9881;</button>
+      </div>
+    </header>
+    <main class="grid-container">
+      <div class="button-grid" id="button-grid"></div>
+    </main>
+  </div>
+
+  <!-- ── Settings View ─────────────────────────────────────── -->
+  <div id="settings" class="view">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" onclick="showView('app')">&#8592; Back</button>
+      </div>
+      <div class="topbar-center">
+        <span class="view-title">Settings</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" onclick="showView('wifi')">WiFi</button>
+      </div>
+    </header>
+
+    <!-- Scrollable tab area -->
+    <div class="settings-tabs">
+      <button class="tab-btn active" onclick="showTab('tab-connection')">Connection</button>
+      <button class="tab-btn" onclick="showTab('tab-display')">Display</button>
+      <button class="tab-btn" onclick="showTab('tab-system')">System</button>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- Connection tab -->
+      <div id="tab-connection" class="tab-panel active">
+        <div class="settings-section">
+          <h2>Agent Status</h2>
+          <div class="setting-row">
+            <div id="agent-status-dot" class="status-dot disconnected" style="flex-shrink:0"></div>
+            <span id="agent-status-label" style="color:rgba(255,255,255,.85);font-size:13px">No agent connected</span>
+          </div>
+          <div class="setting-row" id="agent-info-row" style="display:none">
+            <span id="agent-info-text" style="color:rgba(255,255,255,.7);font-size:12px"></span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Security Token</h2>
+          <div class="setting-row">
+            <span id="token-display" class="token-display">••••••••</span>
+            <button class="icon-btn" onclick="toggleToken()" id="token-eye">&#128065;</button>
+          </div>
+          <div class="setting-row-btns">
+            <button class="btn-secondary" onclick="copyToken()">Copy Token</button>
+            <button class="btn-secondary" onclick="regenerateToken()">New Token</button>
+          </div>
+          <p class="settings-hint">Enter this token in the agent app on your Mac/PC.</p>
+        </div>
+
+        <div class="settings-section">
+          <h2>Download Agent</h2>
+          <p class="settings-hint" style="margin-bottom:8px">Install the agent on your Mac or PC to control it from here.</p>
+          <button class="btn-primary" onclick="showDownloadPage()">Open Download Page</button>
+        </div>
+      </div>
+
+      <!-- Display tab -->
+      <div id="tab-display" class="tab-panel">
+        <div class="settings-section">
+          <h2>Brightness</h2>
+          <div class="setting-row">
+            <span style="color:rgba(255,255,255,.8);font-size:13px;min-width:30px" id="brightness-val">100%</span>
+            <input type="range" id="brightness" min="10" max="100" value="100"
+                   oninput="setBrightness(this.value)" style="flex:1" />
+          </div>
+        </div>
+        <div class="settings-section">
+          <h2>Button Grid</h2>
+          <div class="setting-row">
+            <label style="color:rgba(255,255,255,.85);font-size:14px">Layout</label>
+            <select id="grid-size" onchange="setGridSize(this.value)">
+              <option value="4x3">4 × 3 (12 buttons)</option>
+              <option value="4x2">4 × 2 (8 buttons)</option>
+              <option value="3x2">3 × 2 (6 buttons)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- System tab -->
+      <div id="tab-system" class="tab-panel">
+        <div class="settings-section">
+          <h2>Configuration</h2>
+          <div class="setting-row-btns">
+            <button class="btn-secondary" onclick="exportConfig()">Export Config</button>
+            <button class="btn-secondary" onclick="importConfig()">Import Config</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h2>Danger Zone</h2>
+          <div class="setting-row-btns">
+            <button class="btn-danger" onclick="confirmReset()">Reset to Defaults</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── WiFi View ──────────────────────────────────────────── -->
+  <div id="wifi" class="view">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" onclick="showView('settings')">&#8592; Back</button>
+      </div>
+      <div class="topbar-center">
+        <span class="view-title">WiFi</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" onclick="wifiScan()" id="wifi-scan-btn">&#8635;</button>
+      </div>
+    </header>
+    <div class="wifi-body">
+      <div id="wifi-current" class="wifi-current-section" style="display:none">
+        <div class="wifi-connected-badge">
+          <span class="wifi-icon">&#x1F4F6;</span>
+          <div>
+            <div id="wifi-current-ssid" class="wifi-ssid-name"></div>
+            <div class="wifi-status-text">Connected</div>
+          </div>
+          <button class="btn-sm-danger" onclick="wifiDisconnect()">Disconnect</button>
+        </div>
+      </div>
+      <div class="wifi-list" id="wifi-list">
+        <div class="wifi-loading">Scanning…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WiFi Password Dialog ───────────────────────────────── -->
+  <div id="wifi-dialog" class="overlay hidden">
+    <div class="confirm-box" style="min-width:300px">
+      <p id="wifi-dialog-ssid" style="font-weight:700;font-size:16px;margin-bottom:12px"></p>
+      <input type="password" id="wifi-password" placeholder="Password (leave blank if open)"
+             style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px" />
+      <div class="confirm-btns">
+        <button class="btn-secondary" onclick="closeWifiDialog()">Cancel</button>
+        <button class="btn-primary" onclick="wifiConnect()" style="width:auto;padding:9px 20px">Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Button Editor View ─────────────────────────────────── -->
+  <div id="editor" class="view">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" onclick="showView('app')">&#8592; Back</button>
+      </div>
+      <div class="topbar-center">
+        <span class="view-title">Edit Button</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn btn-danger-text" onclick="clearButton()">Clear</button>
+      </div>
+    </header>
+    <div class="editor-body">
+      <div class="editor-preview">
+        <div class="btn-preview" id="btn-preview">
+          <span class="btn-preview-icon" id="preview-icon">?</span>
+          <span class="btn-preview-label" id="preview-label">Button</span>
+        </div>
+      </div>
+      <div class="editor-fields">
+        <div class="field-row">
+          <label>Label</label>
+          <input type="text" id="edit-label" placeholder="Button Label" maxlength="20"
+                 oninput="updatePreview()" />
+        </div>
+        <div class="field-row">
+          <label>Icon (emoji)</label>
+          <input type="text" id="edit-icon" placeholder="🎮" maxlength="4"
+                 oninput="updatePreview()" />
+        </div>
+        <div class="field-row">
+          <label>Color</label>
+          <div class="color-swatches" id="color-swatches"></div>
+        </div>
+        <div class="field-row">
+          <label>Action</label>
+          <select id="edit-action-type" onchange="updateActionFields()">
+            <option value="shortcut">Keyboard Shortcut</option>
+            <option value="launch">Launch App</option>
+            <option value="media">Media Control</option>
+            <option value="text">Type Text</option>
+            <option value="url">Open URL</option>
+            <option value="script">Run Script</option>
+          </select>
+        </div>
+        <div class="field-row" id="action-shortcut">
+          <label>Keys</label>
+          <input type="text" id="edit-shortcut" placeholder="cmd+shift+s" />
+        </div>
+        <div class="field-row hidden" id="action-launch">
+          <label>App Path / Name</label>
+          <input type="text" id="edit-launch" placeholder="/Applications/Safari.app" />
+        </div>
+        <div class="field-row hidden" id="action-media">
+          <label>Media Command</label>
+          <select id="edit-media">
+            <option value="play_pause">Play / Pause</option>
+            <option value="next">Next Track</option>
+            <option value="prev">Previous Track</option>
+            <option value="vol_up">Volume Up</option>
+            <option value="vol_down">Volume Down</option>
+            <option value="mute">Mute</option>
+          </select>
+        </div>
+        <div class="field-row hidden" id="action-text">
+          <label>Text to Type</label>
+          <textarea id="edit-text" placeholder="Hello, World!" rows="3"></textarea>
+        </div>
+        <div class="field-row hidden" id="action-url">
+          <label>URL</label>
+          <input type="text" id="edit-url" placeholder="https://example.com" />
+        </div>
+        <div class="field-row hidden" id="action-script">
+          <label>Script</label>
+          <textarea id="edit-script" placeholder="echo hello" rows="3"></textarea>
+        </div>
+        <button class="btn-primary" onclick="saveButton()">Save Button</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ──────────────────────────────────────────────── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ── Confirm dialog ─────────────────────────────────────── -->
+  <div id="confirm-overlay" class="overlay hidden">
+    <div class="confirm-box">
+      <p id="confirm-msg"></p>
+      <div class="confirm-btns">
+        <button class="btn-secondary" onclick="closeConfirm()">Cancel</button>
+        <button class="btn-danger" id="confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/websocket.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/wifi.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

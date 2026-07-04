@@ -1,0 +1,27 @@
+# Node / Agent
+agent/node_modules/
+agent/dist/
+agent/.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Server data (token is generated at runtime, not committed)
+server/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Sensitive / local
+"API Tokens"
+.claude/

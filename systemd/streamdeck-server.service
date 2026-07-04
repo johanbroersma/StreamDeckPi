@@ -1,0 +1,18 @@
+[Unit]
+Description=Pi Stream Deck — Backend Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/apps/StreamDeckPi/server
+ExecStart=/usr/bin/python3 /apps/StreamDeckPi/server/server.py
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=streamdeck-server
+
+[Install]
+WantedBy=multi-user.target
