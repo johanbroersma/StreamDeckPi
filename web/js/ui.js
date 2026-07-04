@@ -275,6 +275,14 @@ function openEditor(idx) {
     case 'url':      document.getElementById('edit-url').value      = av; break;
     case 'script':   document.getElementById('edit-script').value   = av; break;
     case 'rtsp':     document.getElementById('edit-rtsp').value     = av; break;
+    case 'rest': {
+      let rest = {};
+      try { rest = JSON.parse(av); } catch { /**/ }
+      document.getElementById('edit-rest-method').value = rest.method || 'GET';
+      document.getElementById('edit-rest-url').value    = rest.url    || '';
+      document.getElementById('edit-rest-body').value   = rest.body   || '';
+      break;
+    }
   }
 
   updateActionFields();
@@ -285,7 +293,7 @@ function openEditor(idx) {
 
 function updateActionFields() {
   const at = document.getElementById('edit-action-type').value;
-  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script', 'rtsp'];
+  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script', 'rtsp', 'rest'];
   allFields.forEach(f => {
     const el = document.getElementById('action-' + f);
     if (el) el.classList.toggle('hidden', f !== at);
@@ -329,6 +337,11 @@ function saveButton() {
     case 'url':      action = document.getElementById('edit-url').value;      break;
     case 'script':   action = document.getElementById('edit-script').value;   break;
     case 'rtsp':     action = document.getElementById('edit-rtsp').value;     break;
+    case 'rest':     action = JSON.stringify({
+      method: document.getElementById('edit-rest-method').value,
+      url:    document.getElementById('edit-rest-url').value.trim(),
+      body:   document.getElementById('edit-rest-body').value.trim(),
+    }); break;
   }
 
   const selected = document.querySelector('.color-swatch.selected');

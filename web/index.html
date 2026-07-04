@@ -213,6 +213,7 @@
             <option value="url">Open URL</option>
             <option value="script">Run Script</option>
             <option value="rtsp">Camera Stream (RTSP)</option>
+            <option value="rest">REST Request</option>
           </select>
         </div>
         <div class="field-row" id="action-shortcut">
@@ -250,6 +251,20 @@
           <label>RTSP URL</label>
           <input type="text" id="edit-rtsp" placeholder="rtsp://192.168.1.x:554/stream" />
         </div>
+        <div class="field-row hidden" id="action-rest">
+          <label>Method</label>
+          <select id="edit-rest-method">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+          <label style="margin-top:8px">URL</label>
+          <input type="text" id="edit-rest-url" placeholder="http://192.168.1.x/api/endpoint" />
+          <label style="margin-top:8px">Body (JSON, optional)</label>
+          <textarea id="edit-rest-body" placeholder='{"key": "value"}' rows="2"></textarea>
+        </div>
         <button class="btn-primary" onclick="saveButton()">Save Button</button>
       </div>
     </div>
@@ -276,10 +291,10 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=3"></script>
-  <script src="js/websocket.js?v=3"></script>
-  <script src="js/ui.js?v=3"></script>
-  <script src="js/wifi.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/websocket.js?v=4"></script>
+  <script src="js/ui.js?v=4"></script>
+  <script src="js/wifi.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

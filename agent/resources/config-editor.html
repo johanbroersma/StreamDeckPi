@@ -396,6 +396,7 @@
     { key: 'url',      label: 'URL'      },
     { key: 'script',   label: 'Script'   },
     { key: 'rtsp',     label: 'Camera'   },
+    { key: 'rest',     label: 'REST'     },
   ];
 
   const MEDIA_OPTIONS = [
@@ -506,12 +507,30 @@
     const currentType  = btn.action_type || 'shortcut';
     const currentColor = btn.color || '#ffffff';
 
-    const mediaSelect = currentType === 'media'
+    let restParsed = {};
+    if (currentType === 'rest') {
+      try { restParsed = JSON.parse(btn.action || '{}'); } catch { /**/ }
+    }
+
+    const actionField = currentType === 'media'
       ? `<select id="actionValue">
           ${MEDIA_OPTIONS.map(o =>
             `<option value="${o.value}"${btn.action === o.value ? ' selected' : ''}>${o.label}</option>`
           ).join('')}
         </select>`
+      : currentType === 'rest'
+      ? `<div id="restFields" style="display:flex;flex-direction:column;gap:6px">
+           <select id="restMethod" style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px">
+             ${['GET','POST','PUT','PATCH','DELETE'].map(m =>
+               `<option${restParsed.method === m ? ' selected' : ''}>${m}</option>`
+             ).join('')}
+           </select>
+           <input type="text" id="restUrl" value="${escHtml(restParsed.url || '')}"
+                  placeholder="http://192.168.1.x/api/endpoint"
+                  style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px">
+           <textarea id="restBody" rows="3" placeholder='Body JSON (optional)'
+                     style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px;resize:vertical">${escHtml(restParsed.body || '')}</textarea>
+         </div>`
       : `<input type="text" id="actionValue" value="${escHtml(btn.action || '')}"
               placeholder="${actionPlaceholder(currentType)}">`;
 
@@ -534,7 +553,7 @@
 
       <div class="field-group" id="actionValueGroup">
         <div class="field-label">Action</div>
-        ${mediaSelect}
+        ${actionField}
       </div>
 
       <div class="field-group">
@@ -563,7 +582,6 @@
 
         // Swap action value field
         const group = document.getElementById('actionValueGroup');
-        const label = group.querySelector('.field-label');
         let field;
         if (newType === 'media') {
           field = document.createElement('select');
@@ -573,6 +591,17 @@
             opt.value = o.value; opt.textContent = o.label;
             field.appendChild(opt);
           });
+        } else if (newType === 'rest') {
+          field = document.createElement('div');
+          field.id = 'restFields';
+          field.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+          const s = 'padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px';
+          field.innerHTML = `
+            <select id="restMethod" style="${s}">
+              ${['GET','POST','PUT','PATCH','DELETE'].map(m => `<option>${m}</option>`).join('')}
+            </select>
+            <input type="text" id="restUrl" placeholder="http://192.168.1.x/api/endpoint" style="${s}">
+            <textarea id="restBody" rows="3" placeholder="Body JSON (optional)" style="${s};resize:vertical"></textarea>`;
         } else {
           field = document.createElement('input');
           field.type = 'text';
@@ -580,7 +609,7 @@
           field.placeholder = actionPlaceholder(newType);
         }
         // Replace old field
-        const old = document.getElementById('actionValue');
+        const old = document.getElementById('actionValue') || document.getElementById('restFields');
         if (old) old.replaceWith(field);
       });
     });
@@ -613,8 +642,17 @@
 
     const label      = document.getElementById('btnLabel')?.value || '';
     const actionType = document.querySelector('.pill.active[data-type]')?.dataset.type || 'shortcut';
-    const actionEl   = document.getElementById('actionValue');
-    const action     = actionEl ? actionEl.value : '';
+    let action = '';
+    if (actionType === 'rest') {
+      action = JSON.stringify({
+        method: document.getElementById('restMethod')?.value || 'GET',
+        url:    (document.getElementById('restUrl')?.value || '').trim(),
+        body:   (document.getElementById('restBody')?.value || '').trim(),
+      });
+    } else {
+      const actionEl = document.getElementById('actionValue');
+      action = actionEl ? actionEl.value : '';
+    }
     const colorEl    = document.querySelector('.swatch.selected');
     const color      = colorEl ? colorEl.dataset.color : '#ffffff';
 
@@ -661,6 +699,7 @@
       script:   'Shell command…',
       rtsp:     'rtsp://192.168.1.x:554/stream',
     };
+    if (type === 'rest') return ''; // REST uses a custom multi-field layout
     return map[type] || '';
   }
 
