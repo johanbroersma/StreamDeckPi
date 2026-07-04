@@ -55,19 +55,49 @@ app.whenReady().then(() => {
 
   if (prefs.host) {
     connectToPi(prefs.host, prefs.port, prefs.token);
+  } else {
+    // First launch or no Pi configured — open settings immediately
+    openSettings();
   }
 });
 
 // ── Tray ──────────────────────────────────────────────────────
 
+// 22×22 orange "SD" icon as a base64 PNG (works on macOS menu bar + Windows tray)
+const TRAY_ICON_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAABmJLR0QA/wD/AP+gvaeTAAAA' +
+  'AklEQVQ4y2NgGAWkAgAAAFAAAbHStOcAAAAASUVORK5CYII=';
+
+function makeTrayIcon() {
+  // Build a 22×22 solid #e2640f square PNG programmatically using raw pixel data
+  const SIZE = 22;
+  // PNG signature + IHDR + IDAT + IEND
+  // We use nativeImage.createFromDataURL with an SVG-based data URL as fallback
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">
+    <rect width="${SIZE}" height="${SIZE}" rx="4" fill="#e2640f"/>
+    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
+          font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="white">SD</text>
+  </svg>`;
+  const dataUrl = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+  const icon = nativeImage.createFromDataURL(dataUrl);
+  // Resize to standard tray sizes
+  return icon.resize({ width: SIZE, height: SIZE });
+}
+
 function createTray() {
   const iconPath = path.join(__dirname, '..', 'resources', 'tray-icon.png');
   const icon = fs.existsSync(iconPath)
     ? nativeImage.createFromPath(iconPath)
-    : nativeImage.createEmpty();
+    : makeTrayIcon();
 
   tray = new Tray(icon);
   tray.setToolTip('StreamDeck Pi Agent');
+  // On macOS, double-click opens settings
+  tray.on('double-click', openSettings);
+  // Windows: left-click opens settings (right-click shows menu via Electron default)
+  if (process.platform === 'win32') {
+    tray.on('click', openSettings);
+  }
   updateTrayMenu();
 }
 
