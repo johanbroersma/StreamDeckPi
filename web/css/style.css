@@ -447,11 +447,9 @@ html, body {
 /* ── Camera view ──────────────────────────────────────────── */
 .camera-view {
   background: #000;
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
 }
 .camera-view img {
   width: 100%;

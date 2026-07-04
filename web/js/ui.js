@@ -144,11 +144,7 @@ function renderGrid() {
     el.appendChild(iconEl);
     el.appendChild(labelEl);
 
-    // Short press: fire action
-    el.addEventListener('click', () => handleButtonPress(i));
-
-    // Long press: open editor
-    setupLongPress(el, () => openEditor(i));
+    setupLongPress(el, () => handleButtonPress(i), () => openEditor(i));
 
     grid.appendChild(el);
   }
@@ -167,29 +163,43 @@ function updatePageControls() {
 
 // ── Long press ─────────────────────────────────────────────
 
-function setupLongPress(el, cb) {
+function setupLongPress(el, shortCb, longCb) {
   let timer = null;
+  let longFired = false;
   const THRESHOLD = 600; // ms
 
   const start = (e) => {
     e.preventDefault();
+    longFired = false;
     el.classList.add('long-press');
     timer = setTimeout(() => {
+      longFired = true;
       el.classList.remove('long-press');
-      cb();
+      longCb();
     }, THRESHOLD);
+  };
+
+  const end = () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+      el.classList.remove('long-press');
+      if (!longFired) shortCb();
+    }
   };
 
   const cancel = () => {
     clearTimeout(timer);
+    timer = null;
+    longFired = true; // prevent short-press on swipe-away
     el.classList.remove('long-press');
   };
 
   el.addEventListener('touchstart', start, { passive: false });
-  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchend', end);
   el.addEventListener('touchmove', cancel);
   el.addEventListener('mousedown', start);
-  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseup', end);
   el.addEventListener('mouseleave', cancel);
 }
 
