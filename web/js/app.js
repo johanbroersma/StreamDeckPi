@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Config.load();
   populateSettingsForm();
   renderGrid();
+  startClock();
 
   // WS status
   WS.on('status', (state) => {

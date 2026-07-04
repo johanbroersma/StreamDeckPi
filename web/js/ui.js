@@ -1,5 +1,6 @@
 /**
  * ui.js — View management, button rendering, editor UI
+ * Design: Direction C — Accent Chips
  */
 
 // ── View switching ─────────────────────────────────────────
@@ -14,7 +15,7 @@ function showView(id) {
 // ── Settings tabs ──────────────────────────────────────────
 
 function showTab(id) {
-  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+  document.querySelectorAll('.tab-btn').forEach(b => {
     b.classList.toggle('active', b.getAttribute('onclick') === `showTab('${id}')`);
   });
   document.querySelectorAll('.tab-panel').forEach(p => {
@@ -55,10 +56,6 @@ function regenerateToken() {
   showConfirm('Generate a new token? The current agent will be disconnected.', () => {
     WS._send({ type: 'token_regenerate' });
   });
-}
-
-function showDownloadPage() {
-  window.open('/download/', '_blank');
 }
 
 // ── Camera view ────────────────────────────────────────────
@@ -105,11 +102,45 @@ function closeConfirm() {
 function setStatus(state, label) {
   const dot = document.getElementById('status-indicator');
   const lbl = document.getElementById('status-label');
-  dot.className = 'status-dot ' + state;
-  lbl.textContent = label;
+  if (dot) dot.className = 'status-dot ' + state;
+  if (lbl) lbl.textContent = label;
+}
+
+// ── Clock ──────────────────────────────────────────────────
+
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours();
+  const m = now.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  const clockEl = document.getElementById('deck-clock');
+  const ampmEl  = document.getElementById('deck-ampm');
+  if (clockEl) clockEl.textContent = h + ':' + String(m).padStart(2, '0');
+  if (ampmEl)  ampmEl.textContent  = ampm;
+}
+
+function startClock() {
+  updateClock();
+  // Align tick to the next whole minute
+  const now = new Date();
+  const msToNextMin = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  setTimeout(() => {
+    updateClock();
+    setInterval(updateClock, 60000);
+  }, msToNextMin);
 }
 
 // ── Grid rendering ─────────────────────────────────────────
+
+// Chip color for each button — use button color for the chip bg.
+// Default chip color when white is selected.
+const DEFAULT_CHIP_COLOR = '#e8e7e3';
+
+function chipColor(btn) {
+  const c = btn.color || '#ffffff';
+  return (c === '#ffffff' || c === '#f5f5f5') ? DEFAULT_CHIP_COLOR : c;
+}
 
 function renderGrid() {
   const grid = document.getElementById('button-grid');
@@ -119,29 +150,32 @@ function renderGrid() {
 
   grid.style.gridTemplateColumns = `repeat(${cfg.cols}, 1fr)`;
 
-  // Clear existing buttons
   grid.innerHTML = '';
 
   for (let i = 0; i < total; i++) {
     const btn = Config.getButton(page, i);
+    const hasContent = btn.label || btn.icon;
+
     const el = document.createElement('button');
-    el.className = 'deck-btn' + (btn.label || btn.icon ? '' : ' empty');
+    el.className = 'deck-btn' + (hasContent ? '' : ' empty');
     el.dataset.idx = i;
 
-    // Custom background color
-    if (btn.color && btn.color !== '#ffffff' && btn.label) {
-      el.style.background = btn.color;
-    }
+    // Chip
+    const chip = document.createElement('div');
+    chip.className = 'btn-chip';
+    chip.style.background = hasContent ? chipColor(btn) : '';
 
     const iconEl = document.createElement('span');
-    iconEl.className = 'btn-icon';
-    iconEl.textContent = btn.icon || (btn.label ? '' : '+');
+    iconEl.className = 'btn-chip-icon';
+    iconEl.textContent = btn.icon || (hasContent ? '⚡' : '+');
+    chip.appendChild(iconEl);
 
+    // Label
     const labelEl = document.createElement('span');
     labelEl.className = 'btn-label';
-    labelEl.textContent = btn.label || (btn.icon ? '' : 'Add Button');
+    labelEl.textContent = btn.label || (btn.icon ? '' : 'Add');
 
-    el.appendChild(iconEl);
+    el.appendChild(chip);
     el.appendChild(labelEl);
 
     setupLongPress(el, () => handleButtonPress(i), () => openEditor(i));
@@ -149,16 +183,80 @@ function renderGrid() {
     grid.appendChild(el);
   }
 
-  updatePageControls();
+  renderPageDots();
+  renderBottomTabs();
 }
 
-function updatePageControls() {
-  const page = Config.get('currentPage');
-  const total = Config.pageCount();
-  document.getElementById('page-label').textContent =
-    `Page ${page + 1}${total > 1 ? ' / ' + total : ''}`;
-  document.getElementById('prev-page').disabled = page <= 0;
-  document.getElementById('next-page').disabled = page >= total - 1;
+// ── Page dots ──────────────────────────────────────────────
+
+function renderPageDots() {
+  const container = document.getElementById('deck-page-dots');
+  if (!container) return;
+
+  const current = Config.get('currentPage');
+  const total   = Config.pageCount();
+
+  // Update page name label
+  const nameEl = document.getElementById('deck-page-name');
+  if (nameEl) nameEl.textContent = total > 1 ? `Page ${current + 1}` : 'Stream Deck';
+
+  container.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'deck-dot' + (i === current ? ' active' : '');
+    dot.addEventListener('click', () => {
+      Config.set('currentPage', i);
+      renderGrid();
+    });
+    container.appendChild(dot);
+  }
+}
+
+// ── Bottom nav tabs ────────────────────────────────────────
+
+function renderBottomTabs() {
+  const nav = document.getElementById('deck-nav');
+  if (!nav) return;
+
+  const current = Config.get('currentPage');
+  const total   = Config.pageCount();
+
+  nav.innerHTML = '';
+
+  // Page tabs
+  for (let i = 0; i < total; i++) {
+    const tab = document.createElement('button');
+    tab.className = 'deck-tab' + (i === current ? ' active' : '');
+    tab.textContent = `Page ${i + 1}`;
+    tab.addEventListener('click', () => {
+      Config.set('currentPage', i);
+      renderGrid();
+    });
+    nav.appendChild(tab);
+  }
+
+  // Add page
+  const addTab = document.createElement('button');
+  addTab.className = 'deck-tab';
+  addTab.textContent = '+ Page';
+  addTab.addEventListener('click', () => {
+    const newPage = Config.addPage();
+    Config.set('currentPage', newPage);
+    renderGrid();
+  });
+  nav.appendChild(addTab);
+
+  // Spacer pushes settings to the right
+  const spacer = document.createElement('div');
+  spacer.className = 'deck-tab-spacer';
+  nav.appendChild(spacer);
+
+  // Settings tab
+  const settingsTab = document.createElement('button');
+  settingsTab.className = 'deck-tab';
+  settingsTab.textContent = '⚙ Settings';
+  settingsTab.addEventListener('click', () => showView('settings'));
+  nav.appendChild(settingsTab);
 }
 
 // ── Long press ─────────────────────────────────────────────
@@ -191,7 +289,7 @@ function setupLongPress(el, shortCb, longCb) {
   const cancel = () => {
     clearTimeout(timer);
     timer = null;
-    longFired = true; // prevent short-press on swipe-away
+    longFired = true; // prevent short-press after swipe
     el.classList.remove('long-press');
   };
 
@@ -208,12 +306,7 @@ function setupLongPress(el, shortCb, longCb) {
 function changePage(delta) {
   let page = Config.get('currentPage') + delta;
   const total = Config.pageCount();
-
-  if (delta > 0 && page >= total) {
-    // Auto-add a page
-    Config.addPage();
-  }
-
+  if (delta > 0 && page >= total) Config.addPage();
   page = Math.max(0, Math.min(page, Config.pageCount() - 1));
   Config.set('currentPage', page);
   renderGrid();
@@ -240,7 +333,7 @@ function handleButtonPress(idx) {
   const el = document.querySelector(`.deck-btn[data-idx="${idx}"]`);
   if (el) {
     el.classList.remove('firing');
-    void el.offsetWidth; // reflow
+    void el.offsetWidth;
     el.classList.add('firing');
     el.addEventListener('animationend', () => el.classList.remove('firing'), { once: true });
   }
@@ -251,7 +344,7 @@ function handleButtonPress(idx) {
 function flashButton(idx, success) {
   const el = document.querySelector(`.deck-btn[data-idx="${idx}"]`);
   if (!el) return;
-  el.style.outline = `3px solid ${success ? 'var(--success)' : 'var(--danger)'}`;
+  el.style.outline = `3px solid ${success ? '#43a047' : '#e53935'}`;
   setTimeout(() => { el.style.outline = ''; }, 600);
 }
 
@@ -264,11 +357,10 @@ function openEditor(idx) {
   const page = Config.get('currentPage');
   const btn = Config.getButton(page, idx);
 
-  document.getElementById('edit-label').value   = btn.label   || '';
-  document.getElementById('edit-icon').value    = btn.icon    || '';
-  document.getElementById('edit-action-type').value = btn.action_type || 'shortcut';
+  document.getElementById('edit-label').value        = btn.label   || '';
+  document.getElementById('edit-icon').value         = btn.icon    || '';
+  document.getElementById('edit-action-type').value  = btn.action_type || 'shortcut';
 
-  // Populate action fields
   document.getElementById('edit-shortcut').value = '';
   document.getElementById('edit-launch').value   = '';
   document.getElementById('edit-text').value     = '';
@@ -311,10 +403,17 @@ function updateActionFields() {
 }
 
 function updatePreview() {
-  document.getElementById('preview-icon').textContent  =
-    document.getElementById('edit-icon').value || '?';
-  document.getElementById('preview-label').textContent =
-    document.getElementById('edit-label').value || 'Button';
+  const icon  = document.getElementById('edit-icon').value || '⚡';
+  const label = document.getElementById('edit-label').value || 'Button';
+  document.getElementById('preview-icon').textContent  = icon;
+  document.getElementById('preview-label').textContent = label;
+
+  // Update chip color in preview
+  const selected = document.querySelector('.color-swatch.selected');
+  if (selected) {
+    const chip = document.getElementById('preview-chip');
+    if (chip) chip.style.background = chipColor({ color: selected.dataset.color });
+  }
 }
 
 function buildColorSwatches(selected) {
@@ -324,14 +423,19 @@ function buildColorSwatches(selected) {
     const sw = document.createElement('div');
     sw.className = 'color-swatch' + (color === selected ? ' selected' : '');
     sw.style.background = color;
+    sw.dataset.color = color;
     sw.addEventListener('click', () => {
       container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
       sw.classList.add('selected');
-      document.getElementById('btn-preview').style.background = color;
+      // Update chip preview
+      const chip = document.getElementById('preview-chip');
+      if (chip) chip.style.background = chipColor({ color });
     });
     container.appendChild(sw);
   });
-  document.getElementById('btn-preview').style.background = selected;
+  // Set initial chip preview color
+  const chip = document.getElementById('preview-chip');
+  if (chip) chip.style.background = chipColor({ color: selected });
 }
 
 function saveButton() {
@@ -355,7 +459,7 @@ function saveButton() {
   }
 
   const selected = document.querySelector('.color-swatch.selected');
-  const color = selected ? selected.style.background : '#ffffff';
+  const color = selected ? selected.dataset.color : '#ffffff';
 
   const btn = {
     label:       document.getElementById('edit-label').value.trim(),
@@ -430,22 +534,22 @@ function confirmReset() {
 
 function populateSettingsForm() {
   const brightness = Config.get('brightness') || 100;
-  document.getElementById('brightness').value   = brightness;
+  document.getElementById('brightness').value     = brightness;
   document.getElementById('brightness-val').textContent = brightness + '%';
-  document.getElementById('grid-size').value    = Config.get('grid') || '3x2';
+  document.getElementById('grid-size').value      = Config.get('grid') || '3x2';
 }
 
 function updateAgentStatus(connected, info) {
-  const dot  = document.getElementById('agent-status-dot');
-  const lbl  = document.getElementById('agent-status-label');
-  const row  = document.getElementById('agent-info-row');
-  const info_el = document.getElementById('agent-info-text');
+  const dot    = document.getElementById('agent-status-dot');
+  const lbl    = document.getElementById('agent-status-label');
+  const row    = document.getElementById('agent-info-row');
+  const infoEl = document.getElementById('agent-info-text');
   if (!dot) return;
   dot.className = 'status-dot ' + (connected ? 'connected' : 'disconnected');
   lbl.textContent = connected ? 'Agent connected' : 'No agent connected';
   if (connected && info) {
     row.style.display = '';
-    info_el.textContent = `${info.hostname || ''} (${info.host || ''})`;
+    infoEl.textContent = `${info.hostname || ''} (${info.host || ''})`;
   } else {
     row.style.display = 'none';
   }
@@ -462,6 +566,5 @@ function setBrightness(val) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ brightness: pct }),
   }).catch(() => {});
-  // CSS fallback for non-backlight displays
   document.body.style.filter = pct < 100 ? `brightness(${pct / 100})` : '';
 }

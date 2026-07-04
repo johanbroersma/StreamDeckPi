@@ -4,31 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=800, initial-scale=1.0, user-scalable=no">
   <title>Stream Deck Pi</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
 
   <!-- ── Main Stream Deck View ─────────────────────────────── -->
   <div id="app" class="view active">
-    <header class="topbar">
-      <div class="topbar-left">
+    <header class="deck-header">
+      <div class="deck-header-left">
+        <span class="deck-page-name" id="deck-page-name">Page 1</span>
+      </div>
+      <div class="deck-header-center">
+        <div class="deck-page-dots" id="deck-page-dots"></div>
+      </div>
+      <div class="deck-header-right">
         <div id="status-indicator" class="status-dot disconnected"></div>
-        <span id="status-label" class="status-label">Not Connected</span>
-      </div>
-      <div class="topbar-center">
-        <div class="page-indicator">
-          <button class="page-btn" id="prev-page" onclick="changePage(-1)">&#8249;</button>
-          <span id="page-label">Page 1</span>
-          <button class="page-btn" id="next-page" onclick="changePage(1)">&#8250;</button>
+        <div class="deck-clock-block">
+          <span class="deck-clock" id="deck-clock">--:--</span>
+          <span class="deck-ampm" id="deck-ampm"></span>
         </div>
-      </div>
-      <div class="topbar-right">
-        <button class="icon-btn" onclick="showView('settings')">&#9881;</button>
       </div>
     </header>
     <main class="grid-container">
       <div class="button-grid" id="button-grid"></div>
     </main>
+    <nav class="deck-nav" id="deck-nav"></nav>
   </div>
 
   <!-- ── Settings View ─────────────────────────────────────── -->
@@ -184,7 +187,9 @@
     <div class="editor-body">
       <div class="editor-preview">
         <div class="btn-preview" id="btn-preview">
-          <span class="btn-preview-icon" id="preview-icon">?</span>
+          <div class="preview-chip" id="preview-chip">
+            <span class="btn-preview-icon" id="preview-icon">⚡</span>
+          </div>
           <span class="btn-preview-label" id="preview-label">Button</span>
         </div>
       </div>
@@ -291,10 +296,10 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=5"></script>
-  <script src="js/websocket.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/wifi.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/websocket.js?v=6"></script>
+  <script src="js/ui.js?v=6"></script>
+  <script src="js/wifi.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>

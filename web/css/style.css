@@ -1,7 +1,8 @@
 /* ============================================================
    Pi Stream Deck — Global Styles
    Target: 800×480 Raspberry Pi 7" DSI Touchscreen
-   Design: Orange (#e2640f) background, white rounded buttons
+   Main deck: Direction C — Accent Chips (warm cream + white cards)
+   Other views (settings/wifi/editor): orange accent theme
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,17 +13,13 @@
 :root {
   --accent:       #e2640f;
   --accent-dark:  #c0520c;
-  --accent-light: #f07030;
-  --bg:           #e2640f;
-  --btn-bg:       #ffffff;
-  --btn-shadow:   rgba(0, 0, 0, 0.18);
-  --btn-radius:   22px;
-  --btn-press:    rgba(0, 0, 0, 0.08);
-  --text-dark:    #1a1a1a;
-  --text-mid:     #444444;
+  --bg-deck:      #f5f4f2;   /* Direction C cream */
+  --bg-views:     #e2640f;   /* settings/wifi/editor orange */
+  --text-dark:    #26282e;
+  --text-mid:     #3a3f49;
+  --text-muted:   #9a9ea7;
   --text-light:   #ffffff;
   --topbar-h:     52px;
-  --grid-gap:     14px;
   --pad:          16px;
   --danger:       #e53935;
   --success:      #43a047;
@@ -35,18 +32,263 @@
 html, body {
   width: 800px; height: 480px;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
+  font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-deck);
   color: var(--text-dark);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Views ───────────────────────────────────────────────── */
-.view { display: none; position: absolute; inset: 0; flex-direction: column; background: var(--bg); }
+.view {
+  display: none;
+  position: absolute; inset: 0;
+  flex-direction: column;
+  background: var(--bg-views);
+}
 .view.active { display: flex; }
 
-/* ── Top Bar ─────────────────────────────────────────────── */
+/* Main deck view has its own background */
+#app { background: var(--bg-deck); }
+
+/* ── Direction C: Deck Header ────────────────────────────── */
+.deck-header {
+  height: 54px;
+  flex: none;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deck-header-left,
+.deck-header-center,
+.deck-header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.deck-header-center { justify-content: center; }
+.deck-header-right  { justify-content: flex-end; gap: 10px; }
+
+.deck-page-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* Page dots */
+.deck-page-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deck-dot {
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(40,40,60,.18);
+  cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+  width: 7px;
+}
+
+.deck-dot.active {
+  width: 20px;
+  background: var(--accent);
+}
+
+/* Clock */
+.deck-clock-block {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.deck-clock {
+  font-family: 'JetBrains Mono', 'Hanken Grotesk', monospace;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-ampm {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Status dot in deck header */
+#status-indicator {
+  width: 7px; height: 7px;
+  box-shadow: none;
+}
+
+/* ── Direction C: Grid ───────────────────────────────────── */
+.grid-container {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0 18px 8px;
+}
+
+.button-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+}
+
+/* ── Direction C: Deck Button (white card + chip) ────────── */
+.deck-btn {
+  background: #ffffff;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(40,40,60,.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.deck-btn:active {
+  transform: scale(0.94);
+  box-shadow: 0 1px 3px rgba(40,40,60,.10);
+}
+
+.deck-btn.empty {
+  background: rgba(255,255,255,0.55);
+  box-shadow: none;
+}
+
+/* Chip */
+.btn-chip {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-chip-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.deck-btn.empty .btn-chip {
+  background: rgba(40,40,60,.07) !important;
+  border: 2px dashed rgba(40,40,60,.18);
+}
+
+.deck-btn.empty .btn-chip-icon {
+  font-size: 22px;
+  color: rgba(40,40,60,.22);
+}
+
+/* Label */
+.btn-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.deck-btn.empty .btn-label {
+  color: rgba(40,40,60,.28);
+  font-size: 11px;
+}
+
+/* Long-press feedback */
+.deck-btn.long-press::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(40,40,60,.09);
+  border-radius: inherit;
+  animation: longpress-fill 0.6s linear forwards;
+}
+
+@keyframes longpress-fill {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Action fire flash */
+.deck-btn.firing {
+  animation: btn-fire 0.22s ease;
+}
+
+@keyframes btn-fire {
+  0%   { transform: scale(0.93); }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1.00); }
+}
+
+/* ── Direction C: Bottom Nav ─────────────────────────────── */
+.deck-nav {
+  height: 60px;
+  flex: none;
+  padding: 8px 18px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: #e8e7e3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.deck-tab.active {
+  background: rgba(226,100,15,.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.deck-tab-spacer { flex: 1; }
+
+/* ── Shared: Status Dot ──────────────────────────────────── */
+.status-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.status-dot.connected    { background: var(--connected);    color: var(--connected); }
+.status-dot.disconnected { background: var(--disconnected); color: var(--disconnected); }
+.status-dot.connecting   { background: #ffa726; color: #ffa726; animation: pulse 1.2s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Other Views: Top Bar ────────────────────────────────── */
 .topbar {
   height: var(--topbar-h);
   display: flex; align-items: center; justify-content: space-between;
@@ -67,27 +309,11 @@ html, body {
   letter-spacing: 0.02em;
 }
 
-/* ── Status Dot ──────────────────────────────────────────── */
-.status-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
-}
-.status-dot.connected    { background: var(--connected); color: var(--connected); }
-.status-dot.disconnected { background: var(--disconnected); color: var(--disconnected); }
-.status-dot.connecting   { background: #ffa726; color: #ffa726; animation: pulse 1.2s ease-in-out infinite; }
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-
 .status-label {
   color: rgba(255,255,255,0.85);
   font-size: 13px;
 }
 
-/* ── Icon Buttons (topbar) ───────────────────────────────── */
 .icon-btn {
   background: rgba(255,255,255,0.18);
   border: none; border-radius: 10px;
@@ -98,107 +324,26 @@ html, body {
   transition: background var(--transition);
 }
 .icon-btn:active { background: rgba(255,255,255,0.32); }
-
 .btn-danger-text { color: #ffcdd2; }
 
-/* ── Page Indicator ──────────────────────────────────────── */
-.page-indicator { display: flex; align-items: center; gap: 6px; }
-.page-btn {
-  background: rgba(255,255,255,0.18);
-  border: none; border-radius: 8px;
-  color: var(--text-light);
-  font-size: 22px; line-height: 1;
-  width: 34px; height: 34px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background var(--transition);
-}
-.page-btn:active { background: rgba(255,255,255,0.35); }
-.page-btn:disabled { opacity: 0.35; }
-#page-label {
-  color: var(--text-light);
-  font-size: 14px; font-weight: 500;
-  min-width: 54px; text-align: center;
-}
-
-/* ── Button Grid ─────────────────────────────────────────── */
-.grid-container {
-  flex: 1;
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--grid-gap);
-}
-
-.button-grid {
-  display: grid;
-  gap: var(--grid-gap);
-  /* default 4×3; overridden by JS */
-  grid-template-columns: repeat(4, 1fr);
-  width: 100%; height: 100%;
-}
-
-/* ── Individual Deck Button ──────────────────────────────── */
-.deck-btn {
-  background: var(--btn-bg);
-  border: none; border-radius: var(--btn-radius);
-  box-shadow: 0 4px 12px var(--btn-shadow);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 6px; padding: 8px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-
-.deck-btn:active {
-  transform: scale(0.94);
-  box-shadow: 0 1px 4px var(--btn-shadow);
-}
-
-.deck-btn.empty {
-  background: rgba(255,255,255,0.28);
-  box-shadow: none;
-}
-
-.deck-btn.long-press::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.12);
-  border-radius: inherit;
-  animation: longpress-fill 0.6s linear forwards;
-}
-@keyframes longpress-fill {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.btn-icon {
-  font-size: 36px; line-height: 1;
-}
-
-.btn-label {
-  font-size: 12px; font-weight: 600;
-  color: var(--text-dark);
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding: 0 4px;
-}
-
-.deck-btn.empty .btn-icon { font-size: 28px; color: rgba(255,255,255,0.6); }
-.deck-btn.empty .btn-label { color: rgba(255,255,255,0.5); font-size: 11px; }
-
-/* Feedback flash when button fires */
-.deck-btn.firing {
-  animation: btn-fire 0.25s ease;
-}
-@keyframes btn-fire {
-  0%   { transform: scale(0.92); box-shadow: 0 0 0 rgba(0,0,0,0); }
-  60%  { transform: scale(1.04); }
-  100% { transform: scale(1.00); }
-}
-
 /* ── Settings View ───────────────────────────────────────── */
+.settings-tabs {
+  display: flex; gap: 4px; padding: 8px var(--pad) 0;
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1; padding: 8px;
+  background: rgba(255,255,255,.18);
+  border: none; border-radius: 10px 10px 0 0;
+  color: rgba(255,255,255,.7); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tab-btn.active { background: rgba(255,255,255,.32); color: white; }
+
+.tab-panel { display: none; flex-direction: column; gap: 10px; }
+.tab-panel.active { display: flex; }
+
 .settings-body {
   flex: 1; overflow-y: auto;
   padding: 12px var(--pad);
@@ -232,18 +377,29 @@ html, body {
   flex: 1; background: rgba(255,255,255,0.92);
   border: none; border-radius: 8px;
   padding: 8px 10px; font-size: 14px; color: var(--text-dark);
+  font-family: inherit;
 }
 .setting-row input[type="range"] {
   flex: 1; accent-color: var(--text-light);
 }
 
-.setting-row-btns {
-  display: flex; gap: 10px;
+.setting-row-btns { display: flex; gap: 10px; }
+
+.settings-hint {
+  color: rgba(255,255,255,.6); font-size: 12px; line-height: 1.4;
+}
+
+.token-display {
+  flex: 1; background: rgba(0,0,0,.2);
+  border-radius: 8px; padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  color: white; letter-spacing: .04em;
+  word-break: break-all;
 }
 
 /* ── Editor View ─────────────────────────────────────────── */
 .editor-body {
-  flex: 1; display: flex; gap: var(--grid-gap);
+  flex: 1; display: flex; gap: var(--pad);
   padding: 12px var(--pad);
   overflow: hidden;
 }
@@ -256,15 +412,23 @@ html, body {
 
 .btn-preview {
   width: 120px; height: 120px;
-  background: var(--btn-bg);
+  background: #ffffff;
   border-radius: 24px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.22);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
-.btn-preview-icon  { font-size: 44px; }
-.btn-preview-label { font-size: 14px; font-weight: 600; max-width: 100px; text-align: center; }
+
+.preview-chip {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  background: #e2640f;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.btn-preview-icon  { font-size: 28px; line-height: 1; }
+.btn-preview-label { font-size: 13px; font-weight: 600; color: var(--text-mid); max-width: 100px; text-align: center; }
 
 .editor-fields {
   flex: 1; display: flex; flex-direction: column;
@@ -285,15 +449,12 @@ html, body {
   border: none; border-radius: 10px;
   padding: 9px 12px; font-size: 14px; color: var(--text-dark);
   resize: none;
+  font-family: inherit;
 }
 .field-row textarea { height: 58px; }
-
 .field-row.hidden { display: none; }
 
-/* Color Swatches */
-.color-swatches {
-  display: flex; gap: 8px; flex-wrap: wrap;
-}
+.color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
 .color-swatch {
   width: 34px; height: 34px; border-radius: 50%;
   border: 3px solid transparent;
@@ -309,6 +470,7 @@ html, body {
   border: none; border-radius: 12px;
   padding: 11px 20px; font-size: 15px; font-weight: 700;
   cursor: pointer; width: 100%;
+  font-family: inherit;
   transition: background var(--transition);
 }
 .btn-primary:active { background: #f0f0f0; }
@@ -319,6 +481,7 @@ html, body {
   border: none; border-radius: 10px;
   padding: 9px 16px; font-size: 14px; font-weight: 600;
   cursor: pointer; flex: 1;
+  font-family: inherit;
   transition: background var(--transition);
 }
 .btn-secondary:active { background: rgba(255,255,255,0.35); }
@@ -329,17 +492,18 @@ html, body {
   border: none; border-radius: 10px;
   padding: 9px 16px; font-size: 14px; font-weight: 600;
   cursor: pointer; flex: 1;
+  font-family: inherit;
   transition: background var(--transition);
 }
 .btn-danger:active { background: #c62828; }
 
 /* ── Toast ───────────────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  background: rgba(30,30,30,0.92);
+  position: fixed; bottom: 74px; left: 50%; transform: translateX(-50%);
+  background: rgba(30,34,41,0.94);
   color: white; border-radius: 12px;
-  padding: 10px 20px; font-size: 14px; font-weight: 500;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  padding: 9px 18px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 22px rgba(20,20,40,.28);
   pointer-events: none;
   transition: opacity 0.3s ease;
   white-space: nowrap; z-index: 1000;
@@ -365,35 +529,6 @@ html, body {
 }
 .confirm-btns { display: flex; gap: 12px; }
 
-/* ── Settings tabs ────────────────────────────────────────── */
-.settings-tabs {
-  display: flex; gap: 4px; padding: 8px var(--pad) 0;
-  flex-shrink: 0;
-}
-.tab-btn {
-  flex: 1; padding: 8px; background: rgba(255,255,255,.18);
-  border: none; border-radius: 10px 10px 0 0;
-  color: rgba(255,255,255,.7); font-size: 13px; font-weight: 600;
-  cursor: pointer;
-}
-.tab-btn.active { background: rgba(255,255,255,.32); color: white; }
-
-.tab-panel { display: none; flex-direction: column; gap: 10px; }
-.tab-panel.active { display: flex; }
-
-.settings-hint {
-  color: rgba(255,255,255,.6); font-size: 12px; line-height: 1.4;
-}
-
-/* ── Token display ────────────────────────────────────────── */
-.token-display {
-  flex: 1; background: rgba(0,0,0,.2);
-  border-radius: 8px; padding: 8px 12px;
-  font-family: monospace; font-size: 13px;
-  color: white; letter-spacing: .04em;
-  word-break: break-all;
-}
-
 /* ── WiFi view ────────────────────────────────────────────── */
 .wifi-body {
   flex: 1; overflow-y: auto;
@@ -412,13 +547,8 @@ html, body {
 .wifi-ssid-name { font-weight: 700; font-size: 15px; color: white; }
 .wifi-status-text { font-size: 12px; color: rgba(255,255,255,.65); }
 
-.wifi-list {
-  display: flex; flex-direction: column; gap: 6px;
-}
-.wifi-loading {
-  color: rgba(255,255,255,.6); font-size: 14px;
-  text-align: center; padding: 20px;
-}
+.wifi-list { display: flex; flex-direction: column; gap: 6px; }
+.wifi-loading { color: rgba(255,255,255,.6); font-size: 14px; text-align: center; padding: 20px; }
 .wifi-item {
   background: rgba(255,255,255,.18);
   border-radius: 12px; padding: 12px 14px;
@@ -427,11 +557,7 @@ html, body {
   transition: background var(--transition);
 }
 .wifi-item:active { background: rgba(255,255,255,.28); }
-
-.wifi-signal {
-  font-size: 13px; color: white; min-width: 36px;
-  font-family: monospace; letter-spacing: -1px;
-}
+.wifi-signal { font-size: 13px; color: white; min-width: 36px; font-family: monospace; letter-spacing: -1px; }
 .wifi-info { flex: 1; }
 .wifi-security { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 2px; }
 .wifi-arrow { color: rgba(255,255,255,.4); font-size: 20px; }
@@ -441,6 +567,7 @@ html, body {
   border: none; border-radius: 8px;
   padding: 7px 12px; font-size: 12px; font-weight: 600;
   cursor: pointer; margin-left: auto;
+  font-family: inherit;
 }
 .btn-sm-danger:active { background: var(--danger); }
 
