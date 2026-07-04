@@ -135,7 +135,7 @@ function openSettings() {
   if (settingsWin) { settingsWin.focus(); return; }
 
   settingsWin = new BrowserWindow({
-    width: 480, height: 440,
+    width: 480, height: 520,
     resizable: false,
     title: 'StreamDeck Pi Agent — Settings',
     webPreferences: {
@@ -151,7 +151,7 @@ function openSettings() {
 function openConfigEditor() {
   if (configWin) { configWin.focus(); return; }
   configWin = new BrowserWindow({
-    width: 700, height: 520,
+    width: 920, height: 580,
     title: 'StreamDeck Pi — Configure Buttons',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

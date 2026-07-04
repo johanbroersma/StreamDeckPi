@@ -2,98 +2,253 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
-  <title>Configure Buttons</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com 'self'">
+  <title>Stream Deck Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'IBM Plex Sans', -apple-system, sans-serif;
       font-size: 13px;
-      background: #1a1a1a;
-      color: #e8e8e8;
+      background: #16181d;
+      color: #e8eaed;
       height: 100vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    header {
-      background: #e2640f;
-      padding: 10px 16px;
+    /* ── Titlebar ── */
+    .titlebar {
+      height: 42px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      padding: 0 14px;
+      background: #1b1e24;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    .traffic-lights {
+      display: flex;
+      gap: 7px;
+      -webkit-app-region: no-drag;
+    }
+
+    .traffic-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .traffic-dot.red    { background: #ec6a5e; }
+    .traffic-dot.yellow { background: #f4bf4f; }
+    .traffic-dot.green  { background: #61c554; }
+
+    .titlebar-title {
+      margin-left: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #aeb4bf;
+    }
+
+    /* ── Main layout ── */
+    .main {
+      display: grid;
+      grid-template-columns: 200px 1fr 290px;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── Left rail ── */
+    .left-rail {
+      border-right: 1px solid rgba(255,255,255,0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow-y: auto;
+    }
+
+    .agent-status-box {
+      background: #0f1116;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .agent-status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
       flex-shrink: 0;
     }
 
-    header .dots {
-      display: grid;
-      grid-template-columns: repeat(3, 6px);
-      grid-template-rows: repeat(3, 6px);
+    .status-dot.connected {
+      background: #61c554;
+      box-shadow: 0 0 8px #61c554;
+    }
+
+    .status-dot.disconnected {
+      background: #7f8794;
+    }
+
+    .agent-status-label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .agent-ip {
+      margin-top: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: #7f8794;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #7f8794;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .page-list {
+      display: flex;
+      flex-direction: column;
       gap: 2px;
     }
 
-    header .dots span {
-      background: rgba(255,255,255,0.85);
-      border-radius: 1px;
-    }
-
-    header h1 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 0.02em;
-    }
-
-    .main {
+    .page-item {
       display: flex;
-      flex: 1;
-      overflow: hidden;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
     }
 
-    /* ── Left column ── */
-    .left-col {
-      width: 310px;
-      flex-shrink: 0;
-      border-right: 1px solid #333;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    .page-item:hover { background: rgba(255,255,255,0.05); }
+
+    .page-item.active {
+      background: rgba(226,100,15,0.18);
     }
 
-    .page-tabs {
-      display: flex;
-      padding: 8px 12px 0;
-      gap: 4px;
-      flex-shrink: 0;
+    .page-item-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8eaed;
     }
 
-    .page-tab {
-      padding: 4px 10px;
-      border-radius: 4px 4px 0 0;
-      border: 1px solid #444;
-      border-bottom: none;
-      background: #252525;
-      color: #aaa;
+    .page-item.active .page-item-name {
+      color: #e2640f;
+    }
+
+    .page-item-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: #7f8794;
+    }
+
+    .add-page-btn {
+      margin-top: auto;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px dashed rgba(255,255,255,0.16);
+      background: transparent;
+      color: #9aa1ad;
       cursor: pointer;
       font-size: 12px;
+      font-weight: 500;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .add-page-btn:hover {
+      border-color: rgba(226,100,15,0.5);
+      color: #e2640f;
+    }
+
+    /* ── Center ── */
+    .center {
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      overflow: hidden;
+    }
+
+    .center-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .profile-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .profile-sub {
+      font-size: 12px;
+      color: #7f8794;
+      margin-top: 2px;
+    }
+
+    .layout-switcher {
+      display: flex;
+      gap: 3px;
+      background: #0f1116;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9px;
+      padding: 3px;
+    }
+
+    .layout-btn {
+      border: none;
+      cursor: pointer;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      background: transparent;
+      color: #7f8794;
       transition: background 0.15s, color 0.15s;
     }
 
-    .page-tab.active {
-      background: #2d2d2d;
-      color: #e2640f;
-      border-color: #555;
+    .layout-btn.active {
+      background: #2a2d35;
+      color: #e8eaed;
     }
 
-    .grid-area {
+    .grid-stage {
       flex: 1;
-      padding: 12px;
-      overflow-y: auto;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
+      background: #0c0d11;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 22px;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .btn-grid {
@@ -102,278 +257,313 @@
     }
 
     .btn-cell {
-      border-radius: 8px;
-      border: 2px solid transparent;
-      cursor: pointer;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      padding: 6px 4px;
-      transition: border-color 0.15s, transform 0.1s;
-      min-width: 0;
-      aspect-ratio: 1;
-      position: relative;
+      gap: 5px;
+      cursor: pointer;
+      padding: 6px;
+      text-align: center;
       overflow: hidden;
+      border: 1px solid transparent;
+      transition: transform 0.1s, box-shadow 0.15s;
+      position: relative;
     }
 
     .btn-cell:hover { transform: scale(1.04); }
 
     .btn-cell.selected {
-      border-color: #e2640f;
-      box-shadow: 0 0 0 2px rgba(226,100,15,0.35);
+      box-shadow: 0 0 0 2px #e2640f, 0 0 0 4px rgba(226,100,15,0.25);
     }
 
-    .btn-cell .btn-label {
+    .btn-cell-label {
       font-size: 11px;
       font-weight: 600;
-      text-align: center;
-      color: #111;
+      color: #fff;
+      line-height: 1.12;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
       word-break: break-word;
-      line-height: 1.2;
-      max-width: 100%;
       overflow: hidden;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
+      max-width: 100%;
     }
 
-    .btn-cell .btn-badge {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      background: rgba(0,0,0,0.18);
-      color: #333;
-      border-radius: 3px;
-      padding: 1px 4px;
-      position: absolute;
-      bottom: 4px;
-      right: 4px;
+    .btn-cell-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      letter-spacing: .04em;
+      color: rgba(255,255,255,0.82);
+      background: rgba(0,0,0,0.24);
+      padding: 1px 5px;
+      border-radius: 20px;
     }
 
-    .btn-cell.empty-cell .btn-label { color: #555; }
-    .btn-cell.empty-cell .btn-badge { display: none; }
-
-    /* ── Right column ── */
-    .right-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    .btn-cell-plus {
+      font-size: 20px;
+      color: rgba(255,255,255,0.16);
+      font-weight: 300;
+      line-height: 1;
     }
 
-    .editor-panel {
-      flex: 1;
-      padding: 16px;
+    /* ── Right inspector ── */
+    .inspector {
+      border-left: 1px solid rgba(255,255,255,0.06);
+      background: #1b1e24;
+      padding: 20px;
       overflow-y: auto;
-    }
-
-    .placeholder {
       display: flex;
       flex-direction: column;
+    }
+
+    .insp-empty {
+      flex: 1;
+      display: flex;
       align-items: center;
       justify-content: center;
-      height: 100%;
-      gap: 10px;
-      color: #555;
-    }
-
-    .placeholder .ph-dots {
-      display: grid;
-      grid-template-columns: repeat(3, 10px);
-      grid-template-rows: repeat(3, 10px);
-      gap: 4px;
-      opacity: 0.4;
-    }
-
-    .placeholder .ph-dots span {
-      background: #e2640f;
-      border-radius: 2px;
-    }
-
-    .placeholder p { font-size: 13px; }
-
-    .editor-heading {
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 14px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #333;
-    }
-
-    .field-group {
-      margin-bottom: 14px;
-    }
-
-    .field-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #888;
-      margin-bottom: 5px;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      background: #252525;
-      border: 1px solid #444;
-      border-radius: 5px;
-      padding: 7px 10px;
-      color: #e8e8e8;
+      text-align: center;
+      color: #7f8794;
       font-size: 13px;
+      line-height: 1.55;
+      padding: 40px 12px;
+    }
+
+    .insp-heading {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      flex-shrink: 0;
+    }
+
+    .insp-section {
+      margin-bottom: 16px;
+    }
+
+    .insp-label {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #7f8794;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .insp-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #0f1116;
+      color: #e8eaed;
+      font-size: 13px;
+      font-family: 'IBM Plex Sans', sans-serif;
       outline: none;
       transition: border-color 0.15s;
     }
 
-    input[type="text"]:focus { border-color: #e2640f; }
+    .insp-input:focus { border-color: #e2640f; }
 
-    /* Action type pills */
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .pill {
-      padding: 5px 11px;
-      border-radius: 20px;
-      border: 1px solid #444;
-      background: #252525;
-      color: #aaa;
-      cursor: pointer;
+    .insp-input.mono {
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 12px;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
 
-    .pill:hover { border-color: #e2640f; color: #e2640f; }
-
-    .pill.active {
-      background: #e2640f;
-      border-color: #e2640f;
-      color: #fff;
-      font-weight: 600;
+    textarea.insp-input {
+      resize: vertical;
+      min-height: 72px;
     }
 
-    /* Media select */
-    select {
-      width: 100%;
-      background: #252525;
-      border: 1px solid #444;
-      border-radius: 5px;
-      padding: 7px 10px;
-      color: #e8e8e8;
-      font-size: 13px;
-      outline: none;
+    select.insp-input {
       cursor: pointer;
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237f8794'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 10px center;
+      background-position: right 11px center;
     }
 
-    select:focus { border-color: #e2640f; }
-
-    /* Color swatches */
-    .swatch-row {
+    /* Action type pills */
+    .action-pills {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
+      margin-bottom: 0;
     }
 
-    .swatch {
-      width: 24px;
-      height: 24px;
-      border-radius: 5px;
+    .action-pill {
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: #9aa1ad;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .action-pill:hover {
+      border-color: rgba(226,100,15,0.5);
+      color: #e2640f;
+    }
+
+    .action-pill.active {
+      background: rgba(226,100,15,0.18);
+      border-color: rgba(226,100,15,0.6);
+      color: #e2640f;
+      font-weight: 600;
+    }
+
+    /* REST sub-fields */
+    .rest-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Color palette */
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .color-swatch {
+      width: 27px;
+      height: 27px;
+      border-radius: 7px;
       cursor: pointer;
       border: 2px solid transparent;
       transition: transform 0.1s, border-color 0.15s;
+      flex-shrink: 0;
     }
 
-    .swatch:hover { transform: scale(1.15); }
-    .swatch.selected { border-color: #e2640f; }
+    .color-swatch:hover { transform: scale(1.15); }
 
-    /* Action buttons */
-    .action-row {
+    .color-swatch.selected {
+      border-color: #e2640f;
+      box-shadow: 0 0 0 1px rgba(226,100,15,0.4);
+    }
+
+    /* Delete + Save row */
+    .insp-actions {
+      margin-top: auto;
+      padding-top: 16px;
       display: flex;
+      flex-direction: column;
       gap: 8px;
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid #333;
     }
-
-    .btn-save, .btn-clear {
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-
-    .btn-save:hover, .btn-clear:hover { opacity: 0.88; transform: scale(0.98); }
 
     .btn-save {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: none;
       background: #e2640f;
       color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: opacity 0.15s;
     }
 
-    .btn-clear {
-      background: #333;
-      color: #aaa;
-    }
+    .btn-save:hover { opacity: 0.88; }
 
-    .save-indicator {
+    .btn-delete {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(236,106,94,0.4);
+      background: rgba(236,106,94,0.10);
+      color: #f0a89f;
+      cursor: pointer;
       font-size: 12px;
-      color: #6dbf6d;
-      margin-left: 8px;
+      font-weight: 500;
+      font-family: 'IBM Plex Sans', sans-serif;
+      transition: background 0.15s;
+    }
+
+    .btn-delete:hover { background: rgba(236,106,94,0.18); }
+
+    .save-flash {
+      font-size: 12px;
+      color: #61c554;
+      text-align: center;
       opacity: 0;
       transition: opacity 0.3s;
-      align-self: center;
+      height: 0;
+      overflow: hidden;
     }
 
-    .save-indicator.show { opacity: 1; }
+    .save-flash.show {
+      opacity: 1;
+      height: auto;
+    }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="dots">
-    <span></span><span></span><span></span>
-    <span></span><span></span><span></span>
-    <span></span><span></span><span></span>
+<!-- Titlebar -->
+<div class="titlebar">
+  <div class="traffic-lights">
+    <div class="traffic-dot red"></div>
+    <div class="traffic-dot yellow"></div>
+    <div class="traffic-dot green"></div>
   </div>
-  <h1>Configure Buttons</h1>
-</header>
+  <span class="titlebar-title">Stream Deck Manager</span>
+</div>
 
+<!-- Main 3-column layout -->
 <div class="main">
-  <div class="left-col">
-    <div class="page-tabs" id="pageTabs"></div>
-    <div class="grid-area">
+
+  <!-- Left rail: connection + pages -->
+  <div class="left-rail">
+    <div class="agent-status-box">
+      <div class="agent-status-row">
+        <div class="status-dot disconnected" id="agentDot"></div>
+        <span class="agent-status-label" id="agentLabel">Not connected</span>
+      </div>
+      <div class="agent-ip" id="agentIp" style="display:none"></div>
+    </div>
+
+    <div>
+      <div class="section-label">Pages</div>
+      <div class="page-list" id="pageList"></div>
+    </div>
+
+    <button class="add-page-btn" id="addPageBtn">+ New page</button>
+  </div>
+
+  <!-- Center: key grid -->
+  <div class="center">
+    <div class="center-header">
+      <div>
+        <div class="profile-title" id="centerTitle">Page 1</div>
+        <div class="profile-sub" id="centerSub">0 keys configured</div>
+      </div>
+      <div class="layout-switcher" id="layoutSwitcher"></div>
+    </div>
+
+    <div class="grid-stage">
       <div class="btn-grid" id="btnGrid"></div>
     </div>
   </div>
-  <div class="right-col">
-    <div class="editor-panel" id="editorPanel">
-      <div class="placeholder" id="placeholder">
-        <div class="ph-dots">
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-        </div>
-        <p>Select a button to edit</p>
-      </div>
-    </div>
+
+  <!-- Right inspector -->
+  <div class="inspector" id="inspector">
+    <div class="insp-empty">Select a key to edit it, or click an empty key to add a new action.</div>
   </div>
+
 </div>
 
 <script>
@@ -381,34 +571,52 @@
   let config = { grid: '3x2', pages: [[]], currentPage: 0 };
   let activePage = 0;
   let selectedIdx = null;
+  let agentConnected = false;
+  let agentInfo = null;
+
+  const LAYOUTS = [
+    { key: '3x2', label: '3×2' },
+    { key: '4x2', label: '4×2' },
+    { key: '4x3', label: '4×3' },
+  ];
 
   const COLOR_SWATCHES = [
     '#ffffff', '#f5f5f5', '#ef9a9a', '#f48fb1',
     '#ce93d8', '#90caf9', '#80cbc4', '#a5d6a7',
     '#fff176', '#ffcc80', '#ffab91', '#bcaaa4',
+    '#e2640f', '#1565c0', '#388e3c', '#6a1b9a',
   ];
 
   const ACTION_TYPES = [
-    { key: 'shortcut', label: 'Shortcut' },
-    { key: 'launch',   label: 'Launch'   },
-    { key: 'media',    label: 'Media'    },
-    { key: 'text',     label: 'Text'     },
-    { key: 'url',      label: 'URL'      },
-    { key: 'script',   label: 'Script'   },
-    { key: 'rtsp',     label: 'Camera'   },
-    { key: 'rest',     label: 'REST'     },
+    { key: 'shortcut', label: 'Shortcut'  },
+    { key: 'launch',   label: 'Launch'    },
+    { key: 'media',    label: 'Media'     },
+    { key: 'text',     label: 'Text'      },
+    { key: 'url',      label: 'URL'       },
+    { key: 'script',   label: 'Script'    },
+    { key: 'rtsp',     label: 'Camera'    },
+    { key: 'rest',     label: 'REST'      },
   ];
 
   const MEDIA_OPTIONS = [
-    { value: 'play_pause', label: 'Play / Pause' },
-    { value: 'next',       label: 'Next Track'   },
-    { value: 'prev',       label: 'Previous Track'},
-    { value: 'vol_up',     label: 'Volume Up'    },
-    { value: 'vol_down',   label: 'Volume Down'  },
-    { value: 'mute',       label: 'Mute'         },
+    { value: 'play_pause', label: 'Play / Pause'   },
+    { value: 'next',       label: 'Next Track'     },
+    { value: 'prev',       label: 'Previous Track' },
+    { value: 'vol_up',     label: 'Volume Up'      },
+    { value: 'vol_down',   label: 'Volume Down'    },
+    { value: 'mute',       label: 'Mute'           },
   ];
 
-  // ── Grid layout helpers ────────────────────────────────────────
+  const ACTION_PLACEHOLDERS = {
+    shortcut: 'e.g. cmd+shift+s',
+    launch:   '/Applications/Safari.app',
+    text:     'Text to type…',
+    url:      'https://example.com',
+    script:   'echo hello',
+    rtsp:     'rtsp://192.168.1.x:554/stream',
+  };
+
+  // ── Grid helpers ───────────────────────────────────────────────
   function gridDims(grid) {
     const map = { '3x2': [3,2], '4x2': [4,2], '4x3': [4,3] };
     return map[grid] || [3,2];
@@ -419,91 +627,157 @@
     return c * r;
   }
 
-  // ── Render page tabs ───────────────────────────────────────────
-  function renderTabs() {
-    const tabs = document.getElementById('pageTabs');
+  // ── Agent status (pushed from main on config-update events) ────
+  function updateAgentStatusUI() {
+    const dot = document.getElementById('agentDot');
+    const lbl = document.getElementById('agentLabel');
+    const ip  = document.getElementById('agentIp');
+    dot.className = 'status-dot ' + (agentConnected ? 'connected' : 'disconnected');
+    lbl.textContent = agentConnected ? 'Agent connected' : 'Not connected';
+    if (agentConnected && agentInfo) {
+      ip.style.display = '';
+      ip.textContent = (agentInfo.host || '') + ':9021';
+    } else {
+      ip.style.display = 'none';
+    }
+  }
+
+  // ── Render page list (left rail) ───────────────────────────────
+  function renderPageList() {
+    const list = document.getElementById('pageList');
     const pages = config.pages || [[]];
-    if (pages.length <= 1) { tabs.style.display = 'none'; return; }
-    tabs.style.display = 'flex';
-    tabs.innerHTML = pages.map((_, i) =>
-      `<div class="page-tab${i === activePage ? ' active' : ''}" data-page="${i}">Page ${i+1}</div>`
-    ).join('');
-    tabs.querySelectorAll('.page-tab').forEach(el => {
+    const grid  = config.grid || '3x2';
+    const total = totalCells(grid);
+
+    list.innerHTML = '';
+    pages.forEach((page, i) => {
+      const filled = (page || []).filter(b => b && (b.label || b.action)).length;
+      const el = document.createElement('div');
+      el.className = 'page-item' + (i === activePage ? ' active' : '');
+      el.innerHTML = `
+        <span class="page-item-name">Page ${i + 1}</span>
+        <span class="page-item-count">${filled}/${total}</span>`;
       el.addEventListener('click', () => {
-        activePage = parseInt(el.dataset.page);
+        activePage = i;
         selectedIdx = null;
-        renderTabs();
-        renderGrid();
-        renderEditor();
+        renderAll();
       });
+      list.appendChild(el);
     });
+
+    // Add page button
+    document.getElementById('addPageBtn').onclick = () => {
+      if (!config.pages) config.pages = [[]];
+      config.pages.push([]);
+      activePage = config.pages.length - 1;
+      selectedIdx = null;
+      window.electronAPI.setConfig(config);
+      renderAll();
+    };
+  }
+
+  // ── Render layout switcher ─────────────────────────────────────
+  function renderLayoutSwitcher() {
+    const switcher = document.getElementById('layoutSwitcher');
+    const current  = config.grid || '3x2';
+    switcher.innerHTML = '';
+    LAYOUTS.forEach(({ key, label }) => {
+      const btn = document.createElement('button');
+      btn.className = 'layout-btn' + (key === current ? ' active' : '');
+      btn.textContent = label;
+      btn.addEventListener('click', () => {
+        config.grid = key;
+        selectedIdx = null;
+        window.electronAPI.setConfig(config);
+        renderAll();
+      });
+      switcher.appendChild(btn);
+    });
+  }
+
+  // ── Render center header ───────────────────────────────────────
+  function renderCenterHeader() {
+    const pages = config.pages || [[]];
+    const grid  = config.grid || '3x2';
+    const total = totalCells(grid);
+    const page  = pages[activePage] || [];
+    const filled = page.filter(b => b && (b.label || b.action)).length;
+
+    document.getElementById('centerTitle').textContent = `Page ${activePage + 1}`;
+    document.getElementById('centerSub').textContent =
+      `${filled} of ${total} keys configured`;
   }
 
   // ── Render button grid ─────────────────────────────────────────
   function renderGrid() {
-    const grid = document.getElementById('btnGrid');
+    const grid   = document.getElementById('btnGrid');
     const [cols, rows] = gridDims(config.grid || '3x2');
-    const total = cols * rows;
-    const cellSize = Math.floor((282 - (cols-1)*8) / cols);
+    const total  = cols * rows;
 
-    grid.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
-    grid.style.gridTemplateRows    = `repeat(${rows}, ${cellSize}px)`;
-    grid.style.width = `${cols * cellSize + (cols-1)*8}px`;
+    // Compute key size to fit the stage
+    // Stage is ~(920-200-290-44-40-2)px wide and ~(580-42-40-2)px tall, with 22px padding each side
+    const stageW = 920 - 200 - 290 - 44; // approx center width
+    const stageH = 580 - 42 - 40 - 44;   // approx available height
+    const maxKeyW = Math.floor((stageW - 44 - (cols - 1) * 8) / cols);
+    const maxKeyH = Math.floor((stageH - 44 - (rows - 1) * 8) / rows);
+    const keyPx = Math.min(maxKeyW, maxKeyH, 90);
 
-    const pages = config.pages || [[]];
-    const buttons = pages[activePage] || [];
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${keyPx}px)`;
+    grid.style.gridTemplateRows    = `repeat(${rows}, ${keyPx}px)`;
 
+    const buttons = (config.pages || [[]])[activePage] || [];
     grid.innerHTML = '';
+
     for (let i = 0; i < total; i++) {
       const btn = buttons[i];
       const cell = document.createElement('div');
-      cell.className = 'btn-cell' + (i === selectedIdx ? ' selected' : '') + (!btn ? ' empty-cell' : '');
-      cell.style.background = btn ? (btn.color || '#ffffff') : '#2a2a2a';
-      cell.style.width  = cellSize + 'px';
-      cell.style.height = cellSize + 'px';
+      cell.className = 'btn-cell' + (i === selectedIdx ? ' selected' : '');
+      cell.style.width  = keyPx + 'px';
+      cell.style.height = keyPx + 'px';
+      cell.style.background = btn && btn.color ? btn.color : '#1e2029';
+      cell.style.border = btn ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.05)';
 
-      const lbl = document.createElement('div');
-      lbl.className = 'btn-label';
-      lbl.textContent = btn ? (btn.label || '') : '+';
-      cell.appendChild(lbl);
-
-      if (btn && btn.action_type) {
-        const badge = document.createElement('div');
-        badge.className = 'btn-badge';
-        badge.textContent = btn.action_type;
-        cell.appendChild(badge);
+      if (btn && (btn.label || btn.action)) {
+        if (btn.label) {
+          const lbl = document.createElement('span');
+          lbl.className = 'btn-cell-label';
+          lbl.textContent = btn.label;
+          cell.appendChild(lbl);
+        }
+        if (btn.action_type) {
+          const tag = document.createElement('span');
+          tag.className = 'btn-cell-tag';
+          tag.textContent = btn.action_type;
+          cell.appendChild(tag);
+        }
+      } else {
+        const plus = document.createElement('span');
+        plus.className = 'btn-cell-plus';
+        plus.textContent = '+';
+        cell.appendChild(plus);
       }
 
       cell.addEventListener('click', () => {
         selectedIdx = i;
         renderGrid();
-        renderEditor();
+        renderInspector();
       });
+
       grid.appendChild(cell);
     }
   }
 
-  // ── Render editor panel ────────────────────────────────────────
-  function renderEditor() {
-    const panel = document.getElementById('editorPanel');
+  // ── Render inspector ───────────────────────────────────────────
+  function renderInspector() {
+    const panel = document.getElementById('inspector');
 
     if (selectedIdx === null) {
-      panel.innerHTML = `
-        <div class="placeholder" id="placeholder">
-          <div class="ph-dots">
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
-          </div>
-          <p>Select a button to edit</p>
-        </div>`;
+      panel.innerHTML = '<div class="insp-empty">Select a key to edit it, or click an empty key to add a new action.</div>';
       return;
     }
 
-    const pages = config.pages || [[]];
-    const buttons = pages[activePage] || [];
+    const buttons = (config.pages || [[]])[activePage] || [];
     const btn = buttons[selectedIdx] || { label: '', action_type: 'shortcut', action: '', color: '#ffffff' };
-
     const currentType  = btn.action_type || 'shortcut';
     const currentColor = btn.color || '#ffffff';
 
@@ -512,173 +786,192 @@
       try { restParsed = JSON.parse(btn.action || '{}'); } catch { /**/ }
     }
 
-    const actionField = currentType === 'media'
-      ? `<select id="actionValue">
-          ${MEDIA_OPTIONS.map(o =>
-            `<option value="${o.value}"${btn.action === o.value ? ' selected' : ''}>${o.label}</option>`
-          ).join('')}
-        </select>`
-      : currentType === 'rest'
-      ? `<div id="restFields" style="display:flex;flex-direction:column;gap:6px">
-           <select id="restMethod" style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px">
-             ${['GET','POST','PUT','PATCH','DELETE'].map(m =>
-               `<option${restParsed.method === m ? ' selected' : ''}>${m}</option>`
-             ).join('')}
-           </select>
-           <input type="text" id="restUrl" value="${escHtml(restParsed.url || '')}"
-                  placeholder="http://192.168.1.x/api/endpoint"
-                  style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px">
-           <textarea id="restBody" rows="3" placeholder='Body JSON (optional)'
-                     style="padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px;resize:vertical">${escHtml(restParsed.body || '')}</textarea>
-         </div>`
-      : `<input type="text" id="actionValue" value="${escHtml(btn.action || '')}"
-              placeholder="${actionPlaceholder(currentType)}">`;
-
+    // Build inspector HTML
     panel.innerHTML = `
-      <div class="editor-heading">Button ${selectedIdx + 1}</div>
+      <div class="insp-heading">Edit key</div>
 
-      <div class="field-group">
-        <div class="field-label">Label</div>
-        <input type="text" id="btnLabel" value="${escHtml(btn.label || '')}" placeholder="Button label">
+      <div class="insp-section">
+        <div class="insp-label">Title</div>
+        <input class="insp-input" id="inspLabel" type="text" value="${escHtml(btn.label || '')}" placeholder="Key label">
       </div>
 
-      <div class="field-group">
-        <div class="field-label">Action Type</div>
-        <div class="pill-row" id="actionTypePills">
+      <div class="insp-section">
+        <div class="insp-label">Action</div>
+        <div class="action-pills" id="actionPills">
           ${ACTION_TYPES.map(t =>
-            `<div class="pill${t.key === currentType ? ' active' : ''}" data-type="${t.key}">${t.label}</div>`
+            `<button class="action-pill${t.key === currentType ? ' active' : ''}" data-type="${t.key}">${t.label}</button>`
           ).join('')}
         </div>
       </div>
 
-      <div class="field-group" id="actionValueGroup">
-        <div class="field-label">Action</div>
-        ${actionField}
+      <div class="insp-section" id="actionValueSection">
+        ${buildActionField(currentType, btn.action || '', restParsed)}
       </div>
 
-      <div class="field-group">
-        <div class="field-label">Color</div>
-        <div class="swatch-row">
+      <div class="insp-section">
+        <div class="insp-label">Key color</div>
+        <div class="color-palette">
           ${COLOR_SWATCHES.map(c =>
-            `<div class="swatch${c === currentColor ? ' selected' : ''}"
-                  style="background:${c}"
-                  data-color="${c}"></div>`
+            `<div class="color-swatch${c === currentColor ? ' selected' : ''}" style="background:${c}" data-color="${c}"></div>`
           ).join('')}
         </div>
       </div>
 
-      <div class="action-row">
-        <button class="btn-save" id="saveBtn">Save Button</button>
-        <button class="btn-clear" id="clearBtn">Clear</button>
-        <span class="save-indicator" id="saveIndicator">Saved!</span>
+      <div class="insp-actions">
+        <span class="save-flash" id="saveFlash">Saved!</span>
+        <button class="btn-save" id="saveBtn">Save key</button>
+        <button class="btn-delete" id="deleteBtn">Delete key</button>
       </div>`;
 
-    // Wire action type pills
-    panel.querySelectorAll('.pill[data-type]').forEach(pill => {
+    // Wire action pills
+    panel.querySelectorAll('.action-pill').forEach(pill => {
       pill.addEventListener('click', () => {
-        const newType = pill.dataset.type;
-        panel.querySelectorAll('.pill[data-type]').forEach(p => p.classList.remove('active'));
+        panel.querySelectorAll('.action-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
-
-        // Swap action value field
-        const group = document.getElementById('actionValueGroup');
-        let field;
-        if (newType === 'media') {
-          field = document.createElement('select');
-          field.id = 'actionValue';
-          MEDIA_OPTIONS.forEach(o => {
-            const opt = document.createElement('option');
-            opt.value = o.value; opt.textContent = o.label;
-            field.appendChild(opt);
-          });
-        } else if (newType === 'rest') {
-          field = document.createElement('div');
-          field.id = 'restFields';
-          field.style.cssText = 'display:flex;flex-direction:column;gap:6px';
-          const s = 'padding:6px 8px;border-radius:6px;border:1px solid #444;background:#2a2a2a;color:#e8e8e8;font-size:12px';
-          field.innerHTML = `
-            <select id="restMethod" style="${s}">
-              ${['GET','POST','PUT','PATCH','DELETE'].map(m => `<option>${m}</option>`).join('')}
-            </select>
-            <input type="text" id="restUrl" placeholder="http://192.168.1.x/api/endpoint" style="${s}">
-            <textarea id="restBody" rows="3" placeholder="Body JSON (optional)" style="${s};resize:vertical"></textarea>`;
-        } else {
-          field = document.createElement('input');
-          field.type = 'text';
-          field.id = 'actionValue';
-          field.placeholder = actionPlaceholder(newType);
-        }
-        // Replace old field
-        const old = document.getElementById('actionValue') || document.getElementById('restFields');
-        if (old) old.replaceWith(field);
+        const section = document.getElementById('actionValueSection');
+        section.innerHTML = buildActionField(pill.dataset.type, '', {});
       });
     });
 
     // Wire color swatches
-    panel.querySelectorAll('.swatch').forEach(sw => {
+    panel.querySelectorAll('.color-swatch').forEach(sw => {
       sw.addEventListener('click', () => {
-        panel.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        panel.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
         sw.classList.add('selected');
-        // Update preview on grid cell live
+        // Live preview on grid
         const cells = document.querySelectorAll('.btn-cell');
         if (cells[selectedIdx]) cells[selectedIdx].style.background = sw.dataset.color;
       });
     });
 
-    // Save
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      saveCurrentButton();
-    });
-
-    // Clear
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      clearCurrentButton();
-    });
+    document.getElementById('saveBtn').addEventListener('click', saveCurrentButton);
+    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentButton);
   }
 
-  // ── Save / clear helpers ───────────────────────────────────────
+  function buildActionField(type, action, restParsed) {
+    if (type === 'media') {
+      return `
+        <div class="insp-label">Command</div>
+        <select class="insp-input" id="actionValue">
+          ${MEDIA_OPTIONS.map(o =>
+            `<option value="${o.value}"${action === o.value ? ' selected' : ''}>${o.label}</option>`
+          ).join('')}
+        </select>`;
+    }
+    if (type === 'rest') {
+      return `
+        <div class="insp-label">REST Request</div>
+        <div class="rest-fields">
+          <select class="insp-input mono" id="restMethod" style="padding:7px 10px">
+            ${['GET','POST','PUT','PATCH','DELETE'].map(m =>
+              `<option${restParsed.method === m ? ' selected' : ''}>${m}</option>`
+            ).join('')}
+          </select>
+          <input class="insp-input mono" id="restUrl" type="text"
+                 value="${escHtml(restParsed.url || '')}" placeholder="http://192.168.1.x/api/endpoint">
+          <textarea class="insp-input mono" id="restBody" rows="3"
+                    placeholder="Body JSON (optional)">${escHtml(restParsed.body || '')}</textarea>
+        </div>`;
+    }
+    if (type === 'rtsp') {
+      return `
+        <div class="insp-label">RTSP Stream URL</div>
+        <input class="insp-input mono" id="actionValue" type="text"
+               value="${escHtml(action)}" placeholder="rtsp://192.168.1.x:554/stream">`;
+    }
+    if (type === 'script') {
+      return `
+        <div class="insp-label">Shell command</div>
+        <textarea class="insp-input mono" id="actionValue" rows="3"
+                  placeholder="echo hello">${escHtml(action)}</textarea>`;
+    }
+    if (type === 'text') {
+      return `
+        <div class="insp-label">Text to type</div>
+        <textarea class="insp-input" id="actionValue" rows="3"
+                  placeholder="Hello, World!">${escHtml(action)}</textarea>`;
+    }
+    const label = {
+      shortcut: 'Keyboard shortcut',
+      launch:   'Application path / name',
+      url:      'URL',
+    }[type] || 'Value';
+    return `
+      <div class="insp-label">${label}</div>
+      <input class="insp-input${type === 'shortcut' ? '' : ' mono'}" id="actionValue" type="text"
+             value="${escHtml(action)}" placeholder="${escHtml(ACTION_PLACEHOLDERS[type] || '')}">`;
+  }
+
+  // ── Save / delete ──────────────────────────────────────────────
   function saveCurrentButton() {
     if (selectedIdx === null) return;
 
-    const label      = document.getElementById('btnLabel')?.value || '';
-    const actionType = document.querySelector('.pill.active[data-type]')?.dataset.type || 'shortcut';
+    const label      = document.getElementById('inspLabel')?.value.trim() || '';
+    const activeType = document.querySelector('.action-pill.active')?.dataset.type || 'shortcut';
     let action = '';
-    if (actionType === 'rest') {
+
+    if (activeType === 'rest') {
       action = JSON.stringify({
         method: document.getElementById('restMethod')?.value || 'GET',
         url:    (document.getElementById('restUrl')?.value || '').trim(),
         body:   (document.getElementById('restBody')?.value || '').trim(),
       });
     } else {
-      const actionEl = document.getElementById('actionValue');
-      action = actionEl ? actionEl.value : '';
+      action = document.getElementById('actionValue')?.value || '';
     }
-    const colorEl    = document.querySelector('.swatch.selected');
-    const color      = colorEl ? colorEl.dataset.color : '#ffffff';
+
+    const colorEl = document.querySelector('.color-swatch.selected');
+    const color   = colorEl ? colorEl.dataset.color : '#ffffff';
 
     if (!config.pages) config.pages = [[]];
     if (!config.pages[activePage]) config.pages[activePage] = [];
-
-    config.pages[activePage][selectedIdx] = { label, action_type: actionType, action, color };
+    config.pages[activePage][selectedIdx] = { label, action_type: activeType, action, color };
 
     window.electronAPI.setConfig(config);
     renderGrid();
+    renderPageList();
+    renderCenterHeader();
 
-    const ind = document.getElementById('saveIndicator');
-    if (ind) {
-      ind.classList.add('show');
-      setTimeout(() => ind.classList.remove('show'), 2000);
+    const flash = document.getElementById('saveFlash');
+    if (flash) {
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 2000);
     }
   }
 
-  function clearCurrentButton() {
+  function deleteCurrentButton() {
     if (selectedIdx === null) return;
     if (!config.pages || !config.pages[activePage]) return;
-
     config.pages[activePage][selectedIdx] = undefined;
     window.electronAPI.setConfig(config);
+    selectedIdx = null;
+    renderAll();
+  }
+
+  // ── Render all ─────────────────────────────────────────────────
+  function renderAll() {
+    renderPageList();
+    renderLayoutSwitcher();
+    renderCenterHeader();
     renderGrid();
-    renderEditor();
+    renderInspector();
+  }
+
+  // ── Config update from main ────────────────────────────────────
+  function applyConfig(newConfig, status) {
+    if (newConfig) {
+      config = newConfig;
+      activePage = Math.min(activePage, (config.pages || [[]]).length - 1);
+      if (activePage < 0) activePage = 0;
+      const total = totalCells(config.grid || '3x2');
+      if (selectedIdx !== null && selectedIdx >= total) selectedIdx = null;
+    }
+    if (status !== undefined) {
+      agentConnected = status.connected || false;
+      agentInfo      = status.info || null;
+      updateAgentStatusUI();
+    }
+    renderAll();
   }
 
   // ── Utility ────────────────────────────────────────────────────
@@ -690,42 +983,9 @@
       .replace(/"/g, '&quot;');
   }
 
-  function actionPlaceholder(type) {
-    const map = {
-      shortcut: 'e.g. cmd+shift+s',
-      launch:   'e.g. Safari',
-      text:     'Text to type…',
-      url:      'https://…',
-      script:   'Shell command…',
-      rtsp:     'rtsp://192.168.1.x:554/stream',
-    };
-    if (type === 'rest') return ''; // REST uses a custom multi-field layout
-    return map[type] || '';
-  }
-
-  // ── Config update from main process ───────────────────────────
-  function applyConfig(newConfig) {
-    config = newConfig || { grid: '3x2', pages: [[]], currentPage: 0 };
-    activePage = Math.min(activePage, (config.pages || [[]]).length - 1);
-    if (activePage < 0) activePage = 0;
-
-    // Keep selection if still valid
-    const total = totalCells(config.grid || '3x2');
-    if (selectedIdx !== null && selectedIdx >= total) selectedIdx = null;
-
-    renderTabs();
-    renderGrid();
-    if (selectedIdx !== null) renderEditor();
-  }
-
   // ── Init ───────────────────────────────────────────────────────
-  window.electronAPI.getConfig().then(cfg => {
-    applyConfig(cfg);
-  });
-
-  window.electronAPI.onConfigUpdate(cfg => {
-    applyConfig(cfg);
-  });
+  window.electronAPI.getConfig().then(cfg => applyConfig(cfg));
+  window.electronAPI.onConfigUpdate(cfg => applyConfig(cfg));
 </script>
 </body>
 </html>
