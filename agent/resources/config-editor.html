@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
+  <title>Configure Buttons</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      background: #1a1a1a;
+      color: #e8e8e8;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: #e2640f;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    header .dots {
+      display: grid;
+      grid-template-columns: repeat(3, 6px);
+      grid-template-rows: repeat(3, 6px);
+      gap: 2px;
+    }
+
+    header .dots span {
+      background: rgba(255,255,255,0.85);
+      border-radius: 1px;
+    }
+
+    header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left column ── */
+    .left-col {
+      width: 310px;
+      flex-shrink: 0;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .page-tabs {
+      display: flex;
+      padding: 8px 12px 0;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .page-tab {
+      padding: 4px 10px;
+      border-radius: 4px 4px 0 0;
+      border: 1px solid #444;
+      border-bottom: none;
+      background: #252525;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .page-tab.active {
+      background: #2d2d2d;
+      color: #e2640f;
+      border-color: #555;
+    }
+
+    .grid-area {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .btn-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .btn-cell {
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 4px;
+      transition: border-color 0.15s, transform 0.1s;
+      min-width: 0;
+      aspect-ratio: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-cell:hover { transform: scale(1.04); }
+
+    .btn-cell.selected {
+      border-color: #e2640f;
+      box-shadow: 0 0 0 2px rgba(226,100,15,0.35);
+    }
+
+    .btn-cell .btn-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      color: #111;
+      word-break: break-word;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .btn-cell .btn-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(0,0,0,0.18);
+      color: #333;
+      border-radius: 3px;
+      padding: 1px 4px;
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+    }
+
+    .btn-cell.empty-cell .btn-label { color: #555; }
+    .btn-cell.empty-cell .btn-badge { display: none; }
+
+    /* ── Right column ── */
+    .right-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-panel {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      color: #555;
+    }
+
+    .placeholder .ph-dots {
+      display: grid;
+      grid-template-columns: repeat(3, 10px);
+      grid-template-rows: repeat(3, 10px);
+      gap: 4px;
+      opacity: 0.4;
+    }
+
+    .placeholder .ph-dots span {
+      background: #e2640f;
+      border-radius: 2px;
+    }
+
+    .placeholder p { font-size: 13px; }
+
+    .editor-heading {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: #252525;
+      border: 1px solid #444;
+      border-radius: 5px;
+      padding: 7px 10px;
+      color: #e8e8e8;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus { border-color: #e2640f; }
+
+    /* Action type pills */
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .pill {
+      padding: 5px 11px;
+      border-radius: 20px;
+      border: 1px solid #444;
+      background: #252525;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .pill:hover { border-color: #e2640f; color: #e2640f; }
+
+    .pill.active {
+      background: #e2640f;
+      border-color: #e2640f;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Media select */
+    select {
+      width: 100%;
+      background: #252525;
+      border: 1px solid #444;
+      border-radius: 5px;
+      padding: 7px 10px;
+      color: #e8e8e8;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    select:focus { border-color: #e2640f; }
+
+    /* Color swatches */
+    .swatch-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.selected { border-color: #e2640f; }
+
+    /* Action buttons */
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #333;
+    }
+
+    .btn-save, .btn-clear {
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    .btn-save:hover, .btn-clear:hover { opacity: 0.88; transform: scale(0.98); }
+
+    .btn-save {
+      background: #e2640f;
+      color: #fff;
+    }
+
+    .btn-clear {
+      background: #333;
+      color: #aaa;
+    }
+
+    .save-indicator {
+      font-size: 12px;
+      color: #6dbf6d;
+      margin-left: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      align-self: center;
+    }
+
+    .save-indicator.show { opacity: 1; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="dots">
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+    <span></span><span></span><span></span>
+  </div>
+  <h1>Configure Buttons</h1>
+</header>
+
+<div class="main">
+  <div class="left-col">
+    <div class="page-tabs" id="pageTabs"></div>
+    <div class="grid-area">
+      <div class="btn-grid" id="btnGrid"></div>
+    </div>
+  </div>
+  <div class="right-col">
+    <div class="editor-panel" id="editorPanel">
+      <div class="placeholder" id="placeholder">
+        <div class="ph-dots">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <p>Select a button to edit</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  let config = { grid: '3x2', pages: [[]], currentPage: 0 };
+  let activePage = 0;
+  let selectedIdx = null;
+
+  const COLOR_SWATCHES = [
+    '#ffffff', '#f5f5f5', '#ef9a9a', '#f48fb1',
+    '#ce93d8', '#90caf9', '#80cbc4', '#a5d6a7',
+    '#fff176', '#ffcc80', '#ffab91', '#bcaaa4',
+  ];
+
+  const ACTION_TYPES = [
+    { key: 'shortcut', label: 'Shortcut' },
+    { key: 'launch',   label: 'Launch'   },
+    { key: 'media',    label: 'Media'    },
+    { key: 'text',     label: 'Text'     },
+    { key: 'url',      label: 'URL'      },
+    { key: 'script',   label: 'Script'   },
+  ];
+
+  const MEDIA_OPTIONS = [
+    { value: 'play_pause', label: 'Play / Pause' },
+    { value: 'next',       label: 'Next Track'   },
+    { value: 'prev',       label: 'Previous Track'},
+    { value: 'vol_up',     label: 'Volume Up'    },
+    { value: 'vol_down',   label: 'Volume Down'  },
+    { value: 'mute',       label: 'Mute'         },
+  ];
+
+  // ── Grid layout helpers ────────────────────────────────────────
+  function gridDims(grid) {
+    const map = { '3x2': [3,2], '4x2': [4,2], '4x3': [4,3] };
+    return map[grid] || [3,2];
+  }
+
+  function totalCells(grid) {
+    const [c,r] = gridDims(grid);
+    return c * r;
+  }
+
+  // ── Render page tabs ───────────────────────────────────────────
+  function renderTabs() {
+    const tabs = document.getElementById('pageTabs');
+    const pages = config.pages || [[]];
+    if (pages.length <= 1) { tabs.style.display = 'none'; return; }
+    tabs.style.display = 'flex';
+    tabs.innerHTML = pages.map((_, i) =>
+      `<div class="page-tab${i === activePage ? ' active' : ''}" data-page="${i}">Page ${i+1}</div>`
+    ).join('');
+    tabs.querySelectorAll('.page-tab').forEach(el => {
+      el.addEventListener('click', () => {
+        activePage = parseInt(el.dataset.page);
+        selectedIdx = null;
+        renderTabs();
+        renderGrid();
+        renderEditor();
+      });
+    });
+  }
+
+  // ── Render button grid ─────────────────────────────────────────
+  function renderGrid() {
+    const grid = document.getElementById('btnGrid');
+    const [cols, rows] = gridDims(config.grid || '3x2');
+    const total = cols * rows;
+    const cellSize = Math.floor((282 - (cols-1)*8) / cols);
+
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    grid.style.gridTemplateRows    = `repeat(${rows}, ${cellSize}px)`;
+    grid.style.width = `${cols * cellSize + (cols-1)*8}px`;
+
+    const pages = config.pages || [[]];
+    const buttons = pages[activePage] || [];
+
+    grid.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const btn = buttons[i];
+      const cell = document.createElement('div');
+      cell.className = 'btn-cell' + (i === selectedIdx ? ' selected' : '') + (!btn ? ' empty-cell' : '');
+      cell.style.background = btn ? (btn.color || '#ffffff') : '#2a2a2a';
+      cell.style.width  = cellSize + 'px';
+      cell.style.height = cellSize + 'px';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'btn-label';
+      lbl.textContent = btn ? (btn.label || '') : '+';
+      cell.appendChild(lbl);
+
+      if (btn && btn.action_type) {
+        const badge = document.createElement('div');
+        badge.className = 'btn-badge';
+        badge.textContent = btn.action_type;
+        cell.appendChild(badge);
+      }
+
+      cell.addEventListener('click', () => {
+        selectedIdx = i;
+        renderGrid();
+        renderEditor();
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  // ── Render editor panel ────────────────────────────────────────
+  function renderEditor() {
+    const panel = document.getElementById('editorPanel');
+
+    if (selectedIdx === null) {
+      panel.innerHTML = `
+        <div class="placeholder" id="placeholder">
+          <div class="ph-dots">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+          <p>Select a button to edit</p>
+        </div>`;
+      return;
+    }
+
+    const pages = config.pages || [[]];
+    const buttons = pages[activePage] || [];
+    const btn = buttons[selectedIdx] || { label: '', action_type: 'shortcut', action: '', color: '#ffffff' };
+
+    const currentType  = btn.action_type || 'shortcut';
+    const currentColor = btn.color || '#ffffff';
+
+    const mediaSelect = currentType === 'media'
+      ? `<select id="actionValue">
+          ${MEDIA_OPTIONS.map(o =>
+            `<option value="${o.value}"${btn.action === o.value ? ' selected' : ''}>${o.label}</option>`
+          ).join('')}
+        </select>`
+      : `<input type="text" id="actionValue" value="${escHtml(btn.action || '')}"
+              placeholder="${actionPlaceholder(currentType)}">`;
+
+    panel.innerHTML = `
+      <div class="editor-heading">Button ${selectedIdx + 1}</div>
+
+      <div class="field-group">
+        <div class="field-label">Label</div>
+        <input type="text" id="btnLabel" value="${escHtml(btn.label || '')}" placeholder="Button label">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Action Type</div>
+        <div class="pill-row" id="actionTypePills">
+          ${ACTION_TYPES.map(t =>
+            `<div class="pill${t.key === currentType ? ' active' : ''}" data-type="${t.key}">${t.label}</div>`
+          ).join('')}
+        </div>
+      </div>
+
+      <div class="field-group" id="actionValueGroup">
+        <div class="field-label">Action</div>
+        ${mediaSelect}
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Color</div>
+        <div class="swatch-row">
+          ${COLOR_SWATCHES.map(c =>
+            `<div class="swatch${c === currentColor ? ' selected' : ''}"
+                  style="background:${c}"
+                  data-color="${c}"></div>`
+          ).join('')}
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-save" id="saveBtn">Save Button</button>
+        <button class="btn-clear" id="clearBtn">Clear</button>
+        <span class="save-indicator" id="saveIndicator">Saved!</span>
+      </div>`;
+
+    // Wire action type pills
+    panel.querySelectorAll('.pill[data-type]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const newType = pill.dataset.type;
+        panel.querySelectorAll('.pill[data-type]').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+
+        // Swap action value field
+        const group = document.getElementById('actionValueGroup');
+        const label = group.querySelector('.field-label');
+        let field;
+        if (newType === 'media') {
+          field = document.createElement('select');
+          field.id = 'actionValue';
+          MEDIA_OPTIONS.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.value; opt.textContent = o.label;
+            field.appendChild(opt);
+          });
+        } else {
+          field = document.createElement('input');
+          field.type = 'text';
+          field.id = 'actionValue';
+          field.placeholder = actionPlaceholder(newType);
+        }
+        // Replace old field
+        const old = document.getElementById('actionValue');
+        if (old) old.replaceWith(field);
+      });
+    });
+
+    // Wire color swatches
+    panel.querySelectorAll('.swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        panel.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        // Update preview on grid cell live
+        const cells = document.querySelectorAll('.btn-cell');
+        if (cells[selectedIdx]) cells[selectedIdx].style.background = sw.dataset.color;
+      });
+    });
+
+    // Save
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      saveCurrentButton();
+    });
+
+    // Clear
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      clearCurrentButton();
+    });
+  }
+
+  // ── Save / clear helpers ───────────────────────────────────────
+  function saveCurrentButton() {
+    if (selectedIdx === null) return;
+
+    const label      = document.getElementById('btnLabel')?.value || '';
+    const actionType = document.querySelector('.pill.active[data-type]')?.dataset.type || 'shortcut';
+    const actionEl   = document.getElementById('actionValue');
+    const action     = actionEl ? actionEl.value : '';
+    const colorEl    = document.querySelector('.swatch.selected');
+    const color      = colorEl ? colorEl.dataset.color : '#ffffff';
+
+    if (!config.pages) config.pages = [[]];
+    if (!config.pages[activePage]) config.pages[activePage] = [];
+
+    config.pages[activePage][selectedIdx] = { label, action_type: actionType, action, color };
+
+    window.electronAPI.setConfig(config);
+    renderGrid();
+
+    const ind = document.getElementById('saveIndicator');
+    if (ind) {
+      ind.classList.add('show');
+      setTimeout(() => ind.classList.remove('show'), 2000);
+    }
+  }
+
+  function clearCurrentButton() {
+    if (selectedIdx === null) return;
+    if (!config.pages || !config.pages[activePage]) return;
+
+    config.pages[activePage][selectedIdx] = undefined;
+    window.electronAPI.setConfig(config);
+    renderGrid();
+    renderEditor();
+  }
+
+  // ── Utility ────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function actionPlaceholder(type) {
+    const map = {
+      shortcut: 'e.g. cmd+shift+s',
+      launch:   'e.g. Safari',
+      text:     'Text to type…',
+      url:      'https://…',
+      script:   'Shell command…',
+    };
+    return map[type] || '';
+  }
+
+  // ── Config update from main process ───────────────────────────
+  function applyConfig(newConfig) {
+    config = newConfig || { grid: '3x2', pages: [[]], currentPage: 0 };
+    activePage = Math.min(activePage, (config.pages || [[]]).length - 1);
+    if (activePage < 0) activePage = 0;
+
+    // Keep selection if still valid
+    const total = totalCells(config.grid || '3x2');
+    if (selectedIdx !== null && selectedIdx >= total) selectedIdx = null;
+
+    renderTabs();
+    renderGrid();
+    if (selectedIdx !== null) renderEditor();
+  }
+
+  // ── Init ───────────────────────────────────────────────────────
+  window.electronAPI.getConfig().then(cfg => {
+    applyConfig(cfg);
+  });
+
+  window.electronAPI.onConfigUpdate(cfg => {
+    applyConfig(cfg);
+  });
+</script>
+</body>
+</html>

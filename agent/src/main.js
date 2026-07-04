@@ -22,6 +22,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 let tray        = null;
 let settingsWin = null;
+let configWin   = null;
 let piSocket    = null;
 let config      = {};
 let reconnectTimer    = null;
@@ -69,19 +70,20 @@ const TRAY_ICON_B64 =
   'AklEQVQ4y2NgGAWkAgAAAFAAAbHStOcAAAAASUVORK5CYII=';
 
 function makeTrayIcon() {
-  // Build a 22×22 solid #e2640f square PNG programmatically using raw pixel data
-  const SIZE = 22;
-  // PNG signature + IHDR + IDAT + IEND
-  // We use nativeImage.createFromDataURL with an SVG-based data URL as fallback
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">
-    <rect width="${SIZE}" height="${SIZE}" rx="4" fill="#e2640f"/>
-    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
-          font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="white">SD</text>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+    <rect x="0"  y="0"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="7"  y="0"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="14" y="0"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="0"  y="7"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="7"  y="7"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="14" y="7"  width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="0"  y="14" width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="7"  y="14" width="4" height="4" rx="1" fill="#e2640f"/>
+    <rect x="14" y="14" width="4" height="4" rx="1" fill="#e2640f"/>
   </svg>`;
   const dataUrl = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
   const icon = nativeImage.createFromDataURL(dataUrl);
-  // Resize to standard tray sizes
-  return icon.resize({ width: SIZE, height: SIZE });
+  return icon.resize({ width: 22, height: 22 });
 }
 
 function createTray() {
@@ -116,6 +118,7 @@ function updateTrayMenu(status = 'Not Connected') {
       : [{ label: 'Searching for devices…', enabled: false }, { type: 'separator' }]
     ),
     { label: 'Settings…', click: openSettings },
+    { label: 'Configure Buttons…', click: openConfigEditor },
     { type: 'separator' },
     { label: 'Quit', click: () => app.exit(0) },
   ]);
@@ -145,6 +148,20 @@ function openSettings() {
   settingsWin.on('closed', () => { settingsWin = null; });
 }
 
+function openConfigEditor() {
+  if (configWin) { configWin.focus(); return; }
+  configWin = new BrowserWindow({
+    width: 700, height: 520,
+    title: 'StreamDeck Pi — Configure Buttons',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+    },
+  });
+  configWin.loadFile(path.join(__dirname, '..', 'resources', 'config-editor.html'));
+  configWin.on('closed', () => { configWin = null; });
+}
+
 ipcMain.on('save-settings', (event, data) => {
   prefs = { ...prefs, ...data };
   savePrefs(prefs);
@@ -157,6 +174,14 @@ ipcMain.handle('get-settings', () => ({
   discovered: discoveredDevices,
   connected: isConnected(),
 }));
+
+ipcMain.handle('get-config', () => config);
+
+ipcMain.on('set-config', (event, newConfig) => {
+  config = newConfig;
+  send({ type: 'config_sync', config });
+  if (configWin) configWin.webContents.send('config-update', config);
+});
 
 // ── mDNS auto-connect ─────────────────────────────────────────
 
@@ -239,6 +264,7 @@ async function handleMessage(msg) {
     }
     case 'config_push':
       config = msg.config || {};
+      if (configWin) configWin.webContents.send('config-update', config);
       break;
   }
 }
