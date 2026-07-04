@@ -112,17 +112,26 @@
 
     async function init() {
       try {
-        const r = await fetch('/api/agent-info');
-        const info = await r.json();
+        const [infoRes, releaseRes] = await Promise.all([
+          fetch('/api/agent-info'),
+          fetch('https://api.github.com/repos/johanbroersma/StreamDeckPi/releases/latest'),
+        ]);
+        const info    = await infoRes.json();
+        const release = await releaseRes.json();
 
         document.getElementById('token-display').textContent = info.token;
         document.getElementById('hostname').textContent = info.hostname || info.mdns;
 
-        // Point download links to GitHub releases (update URL with your repo)
-        const releaseBase = `https://github.com/johanbroersma/StreamDeckPi/releases/latest/download`;
-        document.getElementById('mac-arm-btn').href   = `${releaseBase}/StreamDeck-Pi-Agent-arm64.dmg`;
-        document.getElementById('mac-intel-btn').href = `${releaseBase}/StreamDeck-Pi-Agent-x64.dmg`;
-        document.getElementById('win-btn').href       = `${releaseBase}/StreamDeck-Pi-Agent-Setup.exe`;
+        // Map assets to download buttons by matching filename patterns
+        const assets = release.assets || [];
+        const find = (pat) => {
+          const a = assets.find(a => pat.test(a.name));
+          return a ? a.browser_download_url : '#';
+        };
+
+        document.getElementById('mac-arm-btn').href   = find(/arm64\.dmg$/);
+        document.getElementById('mac-intel-btn').href = find(/(?<!arm64)\.dmg$/);
+        document.getElementById('win-btn').href       = find(/\.exe$/);
       } catch (e) {
         document.getElementById('token-display').textContent = 'Could not load token — try refreshing';
       }
