@@ -1,6 +1,6 @@
 {
   "name": "streamdeck-pi-agent",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Pi Stream Deck desktop agent for macOS and Windows",
   "author": "Johan Broersma",
   "repository": {

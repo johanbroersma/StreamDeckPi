@@ -128,16 +128,6 @@ const MEDIA_KEYS = {
   mute:       'audio_mute',
 };
 
-// macOS key codes for media keys (F7/F8/F9/F10/F11/F12 in media-key mode)
-const MACOS_MEDIA_CODES = {
-  prev:       98,   // F7
-  play_pause: 100,  // F8
-  next:       101,  // F9
-  mute:        74,  // F10
-  vol_down:    73,  // F11
-  vol_up:      72,  // F12
-};
-
 // Windows virtual key codes for media keys
 const WIN_MEDIA_VK = {
   next:       '0xB0',
@@ -148,16 +138,61 @@ const WIN_MEDIA_VK = {
   vol_up:     '0xAF',
 };
 
+// macOS AppleScript lines per media command.
+// For play/pause/next/prev: tries Spotify then Music then falls back to F-key.
+// For volume/mute: uses 'set volume' which needs no special permissions.
+const MACOS_MEDIA_SCRIPTS = {
+  play_pause: [
+    'if application "Spotify" is running then',
+    '  tell application "Spotify" to playpause',
+    'else if application "Music" is running then',
+    '  tell application "Music" to playpause',
+    'else if application "Podcasts" is running then',
+    '  tell application "Podcasts" to playpause',
+    'else',
+    '  tell application "System Events" to key code 100',  // F8 fallback
+    'end if',
+  ],
+  next: [
+    'if application "Spotify" is running then',
+    '  tell application "Spotify" to next track',
+    'else if application "Music" is running then',
+    '  tell application "Music" to next track',
+    'else',
+    '  tell application "System Events" to key code 101',  // F9 fallback
+    'end if',
+  ],
+  prev: [
+    'if application "Spotify" is running then',
+    '  tell application "Spotify" to previous track',
+    'else if application "Music" is running then',
+    '  tell application "Music" to previous track',
+    'else',
+    '  tell application "System Events" to key code 98',   // F7 fallback
+    'end if',
+  ],
+  vol_up:   ['set volume output volume ((output volume of (get volume settings)) + 10)'],
+  vol_down: ['set volume output volume ((output volume of (get volume settings)) - 10)'],
+  mute: [
+    'set s to (get volume settings)',
+    'if output muted of s then',
+    '  set volume without output muted',
+    'else',
+    '  set volume with output muted',
+    'end if',
+  ],
+};
+
 async function executeMedia(command) {
   if (!MEDIA_KEYS[command]) throw new Error(`Unknown media command: ${command}`);
 
-  // Try robotjs first (fastest, no subprocess)
+  // Try robotjs first — works for all commands including browser media
   if (robot) {
     try {
       robot.keyTap(MEDIA_KEYS[command]);
       return;
     } catch (e) {
-      console.warn('[agent] robotjs media key failed, trying OS fallback:', e.message);
+      console.warn('[agent] robotjs media key failed, using OS fallback:', e.message);
     }
   }
 
@@ -168,14 +203,18 @@ async function executeMedia(command) {
 }
 
 function executeMediaMac(command) {
-  const code = MACOS_MEDIA_CODES[command];
-  if (!code) throw new Error(`No macOS key code for: ${command}`);
+  const lines = MACOS_MEDIA_SCRIPTS[command];
+  if (!lines) throw new Error(`No macOS fallback for media command: ${command}`);
+
+  // Use execFile with separate -e args to avoid any shell quoting issues
+  const args = [];
+  lines.forEach(l => { args.push('-e'); args.push(l); });
+
   return new Promise((resolve, reject) => {
-    exec(
-      `osascript -e 'tell application "System Events" to key code ${code}'`,
-      { timeout: 3000 },
-      (err) => err ? reject(new Error(`Media key failed: ${err.message}`)) : resolve()
-    );
+    execFile('osascript', args, { timeout: 6000 }, (err, stdout, stderr) => {
+      if (err) reject(new Error(stderr || err.message));
+      else resolve();
+    });
   });
 }
 

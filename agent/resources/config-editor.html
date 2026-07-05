@@ -663,14 +663,15 @@
   ];
 
   const ACTION_TYPES = [
-    { key: 'shortcut', label: 'Shortcut'  },
-    { key: 'launch',   label: 'Launch'    },
-    { key: 'media',    label: 'Media'     },
-    { key: 'text',     label: 'Text'      },
-    { key: 'url',      label: 'URL'       },
-    { key: 'script',   label: 'Script'    },
-    { key: 'rtsp',     label: 'Camera'    },
-    { key: 'rest',     label: 'REST'      },
+    { key: 'shortcut',     label: 'Shortcut'  },
+    { key: 'launch',       label: 'Launch'    },
+    { key: 'media',        label: 'Media'     },
+    { key: 'text',         label: 'Text'      },
+    { key: 'url',          label: 'URL'       },
+    { key: 'script',       label: 'Script'    },
+    { key: 'rtsp',         label: 'Camera'    },
+    { key: 'rest',         label: 'REST'      },
+    { key: 'unifi_access', label: 'UniFi'     },
   ];
 
   const MEDIA_OPTIONS = [
@@ -696,6 +697,9 @@
       { key: 'url',      label: 'Open URL',     hint: 'Open a web address',           glyph: '↗',  color: '#ea580c' },
       { key: 'rest',     label: 'REST Request', hint: 'Send an HTTP request',         glyph: '{}', color: '#ca8a04' },
       { key: 'rtsp',     label: 'Camera Stream', hint: 'Show an RTSP video feed',    glyph: '◉',  color: '#b45309' },
+    ]},
+    { category: 'Smart Home', items: [
+      { key: 'unifi_access', label: 'UniFi Door', hint: 'Lock / unlock a UniFi Access door', glyph: '🔓', color: '#0055aa' },
     ]},
   ];
 
@@ -1084,6 +1088,11 @@
           url:    (document.getElementById('restUrl')?.value || '').trim(),
           body:   (document.getElementById('restBody')?.value || '').trim(),
         });
+      } else if (typeKey === 'unifi_access') {
+        action = JSON.stringify({
+          command: document.getElementById('unifiCmd')?.value || 'unlock',
+          door_id: (document.getElementById('unifiDoor')?.value || '').trim(),
+        });
       } else {
         action = document.getElementById('actionValue')?.value || '';
       }
@@ -1105,6 +1114,20 @@
   }
 
   function buildActionField(type, action, restParsed) {
+    if (type === 'unifi_access') {
+      let up = {};
+      try { up = JSON.parse(action || '{}'); } catch { /**/ }
+      return `
+        <div class="insp-label">Command</div>
+        <select class="insp-input" id="unifiCmd">
+          <option value="unlock"${up.command !== 'lock' ? ' selected' : ''}>Unlock (momentary open)</option>
+          <option value="lock"${up.command === 'lock' ? ' selected' : ''}>Lock (⚠ may not be supported)</option>
+        </select>
+        <div class="insp-label" style="margin-top:8px">Door ID</div>
+        <input class="insp-input mono" id="unifiDoor" type="text"
+               value="${escHtml(up.door_id || '')}"
+               placeholder="f4c3af3a-5d27-4c22-a5f0-574afaaa9218">`;
+    }
     if (type === 'media') {
       return `
         <div class="insp-label">Command</div>
