@@ -3,18 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src https://fonts.gstatic.com 'self'">
-  <title>Stream Deck Manager</title>
+  <title>Stream Deck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg:       #0b0c10;
+      --panel:    #101218;
+      --bar:      #15171d;
+      --item:     #171a21;
+      --text:     #e8eaed;
+      --muted:    #7f8794;
+      --dim:      #6a7180;
+      --bd:       rgba(255,255,255,0.06);
+      --bd-m:     rgba(255,255,255,0.10);
+      --bd-l:     rgba(255,255,255,0.12);
+      --accent:   #e2640f;
+      --mono:     'IBM Plex Mono', monospace;
+    }
+
     body {
-      font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 13px;
-      background: #16181d;
-      color: #e8eaed;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -22,361 +37,442 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Titlebar ── */
+    /* ── Title bar ── */
     .titlebar {
-      height: 42px;
+      height: 44px;
+      flex: none;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       padding: 0 14px;
-      background: #1b1e24;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      flex-shrink: 0;
+      background: var(--bar);
+      border-bottom: 1px solid var(--bd);
       -webkit-app-region: drag;
       user-select: none;
     }
 
     .traffic-lights {
       display: flex;
-      gap: 7px;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+    .tl-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .tl-dot.r { background: #ec6a5e; }
+    .tl-dot.y { background: #f4bf4f; }
+    .tl-dot.g { background: #61c554; }
+
+    .app-icon {
+      width: 19px; height: 19px; border-radius: 5px;
+      background: linear-gradient(135deg, #8aa2ff, #5f6bd6);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .app-icon-dots {
+      display: grid;
+      grid-template-columns: repeat(2, 3px);
+      grid-template-rows: repeat(2, 3px);
+      gap: 1.5px;
+    }
+    .app-icon-dots span { background: #fff; border-radius: 1px; }
+
+    .app-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .01em;
+      margin-right: 14px;
+    }
+
+    .page-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       -webkit-app-region: no-drag;
     }
 
-    .traffic-dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-    }
-    .traffic-dot.red    { background: #ec6a5e; }
-    .traffic-dot.yellow { background: #f4bf4f; }
-    .traffic-dot.green  { background: #61c554; }
-
-    .titlebar-title {
-      margin-left: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #aeb4bf;
-    }
-
-    /* ── Main layout ── */
-    .main {
-      display: grid;
-      grid-template-columns: 200px 1fr 290px;
-      flex: 1;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    /* ── Left rail ── */
-    .left-rail {
-      border-right: 1px solid rgba(255,255,255,0.06);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      overflow-y: auto;
-    }
-
-    .agent-status-box {
-      background: #0f1116;
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .agent-status-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .status-dot.connected {
-      background: #61c554;
-      box-shadow: 0 0 8px #61c554;
-    }
-
-    .status-dot.disconnected {
-      background: #7f8794;
-    }
-
-    .agent-status-label {
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .agent-ip {
-      margin-top: 6px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
-      color: #7f8794;
-    }
-
-    .section-label {
-      font-size: 11px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: #7f8794;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    .page-list {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .page-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 10px;
-      border-radius: 8px;
+    .page-tab {
+      border: none;
       cursor: pointer;
-      transition: background 0.15s;
-    }
-
-    .page-item:hover { background: rgba(255,255,255,0.05); }
-
-    .page-item.active {
-      background: rgba(226,100,15,0.18);
-    }
-
-    .page-item-name {
-      font-size: 13px;
+      padding: 5px 12px;
+      border-radius: 7px;
+      font-size: 12.5px;
       font-weight: 500;
-      color: #e8eaed;
+      background: transparent;
+      color: var(--muted);
+      transition: background .15s, color .15s;
+      font-family: inherit;
     }
-
-    .page-item.active .page-item-name {
-      color: #e2640f;
-    }
-
-    .page-item-count {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px;
-      color: #7f8794;
-    }
+    .page-tab.active { background: rgba(255,255,255,.12); color: var(--text); }
+    .page-tab:hover:not(.active) { background: rgba(255,255,255,.06); }
 
     .add-page-btn {
-      margin-top: auto;
-      padding: 9px;
-      border-radius: 8px;
-      border: 1px dashed rgba(255,255,255,0.16);
+      width: 26px; height: 26px;
+      border: 1px dashed rgba(255,255,255,.16);
       background: transparent;
-      color: #9aa1ad;
+      color: var(--muted);
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      font-family: 'IBM Plex Sans', sans-serif;
-      transition: border-color 0.15s, color 0.15s;
+      border-radius: 7px;
+      font-size: 15px;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-app-region: no-drag;
+      transition: border-color .15s, color .15s;
     }
+    .add-page-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    .add-page-btn:hover {
-      border-color: rgba(226,100,15,0.5);
-      color: #e2640f;
-    }
-
-    /* ── Center ── */
-    .center {
-      padding: 22px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      overflow: hidden;
-    }
-
-    .center-header {
+    .titlebar-right {
+      margin-left: auto;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 12px;
+      -webkit-app-region: no-drag;
+    }
+
+    .agent-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 11px;
+      border-radius: 20px;
+      background: rgba(97,197,84,.10);
+      border: 1px solid rgba(97,197,84,.24);
+    }
+    .agent-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #61c554;
+      box-shadow: 0 0 7px #61c554;
       flex-shrink: 0;
     }
-
-    .profile-title {
-      font-size: 17px;
-      font-weight: 600;
-    }
-
-    .profile-sub {
-      font-size: 12px;
-      color: #7f8794;
-      margin-top: 2px;
-    }
+    .agent-label { font-size: 11.5px; font-weight: 600; color: #8fd487; }
 
     .layout-switcher {
       display: flex;
-      gap: 3px;
-      background: #0f1116;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 9px;
+      gap: 2px;
+      background: #0e1015;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 8px;
       padding: 3px;
     }
-
     .layout-btn {
       border: none;
       cursor: pointer;
-      padding: 5px 11px;
+      padding: 4px 10px;
       border-radius: 6px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
+      font-family: var(--mono);
+      font-size: 11.5px;
       font-weight: 500;
       background: transparent;
-      color: #7f8794;
-      transition: background 0.15s, color 0.15s;
+      color: var(--muted);
+      transition: background .15s, color .15s;
     }
+    .layout-btn.active { background: rgba(255,255,255,.12); color: var(--text); }
 
-    .layout-btn.active {
-      background: #2a2d35;
-      color: #e8eaed;
-    }
-
-    .grid-stage {
+    /* ── Body ── */
+    .body {
       flex: 1;
+      display: grid;
+      grid-template-columns: 200px 1fr 278px;
+      min-height: 0;
+    }
+
+    /* ── Library ── */
+    .library {
+      border-right: 1px solid var(--bd);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .lib-header {
+      padding: 14px 14px 10px;
+      flex-shrink: 0;
+    }
+
+    .lib-section-label {
+      font-size: 11px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .lib-search {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--bd-m);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+      font-family: inherit;
+    }
+    .lib-search:focus { border-color: var(--accent); }
+    .lib-search::placeholder { color: var(--dim); }
+
+    .lib-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 10px 14px;
+    }
+
+    .lib-category {
+      margin-bottom: 14px;
+    }
+    .lib-cat-label {
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 600;
+      padding: 4px 2px 8px;
+    }
+
+    .lib-items { display: flex; flex-direction: column; gap: 4px; }
+
+    .lib-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: #0c0d11;
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 16px;
-      padding: 22px;
+      gap: 9px;
+      padding: 8px 9px;
+      border-radius: 9px;
+      cursor: pointer;
+      background: var(--item);
+      border: 1px solid rgba(255,255,255,.05);
+      transition: background .12s, border-color .12s;
+    }
+    .lib-item:hover { background: #1e2230; border-color: var(--bd-m); }
+    .lib-item.hidden-item { display: none; }
+
+    .lib-glyph {
+      width: 30px; height: 30px;
+      flex: none;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .lib-info { min-width: 0; }
+    .lib-name { font-size: 12.5px; font-weight: 500; line-height: 1.2; }
+    .lib-hint { font-size: 10.5px; color: var(--muted); margin-top: 1px; line-height: 1.3; }
+
+    /* ── Stage ── */
+    .stage {
+      display: flex;
+      flex-direction: column;
       min-height: 0;
-      overflow: hidden;
+      background: radial-gradient(120% 90% at 50% 0%, #14161d 0%, #0b0c10 60%);
     }
 
-    .btn-grid {
+    .stage-header {
+      flex: none;
+      padding: 16px 22px 4px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .stage-profile-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .stage-meta {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    .stage-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 8px 22px 18px;
+      min-height: 0;
+    }
+
+    .deck-plate {
+      background: linear-gradient(180deg, #191b21, #111318);
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 28px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .key-grid {
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .btn-cell {
-      border-radius: 12px;
+    .key-cell {
+      border-radius: 13px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 5px;
       cursor: pointer;
-      padding: 6px;
+      padding: 7px;
       text-align: center;
       overflow: hidden;
-      border: 1px solid transparent;
-      transition: transform 0.1s, box-shadow 0.15s;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.07);
+      transition: transform .08s, box-shadow .12s;
       position: relative;
     }
+    .key-cell:hover { transform: scale(1.04); }
 
-    .btn-cell:hover { transform: scale(1.04); }
-
-    .btn-cell.selected {
-      box-shadow: 0 0 0 2px #e2640f, 0 0 0 4px rgba(226,100,15,0.25);
+    .key-cell.selected {
+      box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px rgba(226,100,15,.2);
     }
 
-    .btn-cell-label {
+    .key-glyph {
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,.45);
+      line-height: 1;
+    }
+    .key-label {
       font-size: 11px;
       font-weight: 600;
       color: #fff;
       line-height: 1.12;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-      word-break: break-word;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      text-shadow: 0 1px 2px rgba(0,0,0,.45);
       max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-
-    .btn-cell-tag {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 8px;
-      letter-spacing: .04em;
-      color: rgba(255,255,255,0.82);
-      background: rgba(0,0,0,0.24);
-      padding: 1px 5px;
-      border-radius: 20px;
-    }
-
-    .btn-cell-plus {
+    .key-empty-plus {
       font-size: 20px;
-      color: rgba(255,255,255,0.16);
+      color: rgba(255,255,255,.14);
       font-weight: 300;
       line-height: 1;
     }
 
-    /* ── Right inspector ── */
-    .inspector {
-      border-left: 1px solid rgba(255,255,255,0.06);
-      background: #1b1e24;
-      padding: 20px;
-      overflow-y: auto;
+    /* Page dots */
+    .page-dots {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .page-dots-label { font-size: 11px; color: var(--muted); }
+
+    .page-dot {
+      height: 9px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      background: rgba(255,255,255,.15);
+      transition: background .15s, width .15s;
+    }
+    .page-dot.active { background: var(--accent); }
+
+    .add-page-dot {
+      width: 22px; height: 22px;
+      margin-left: 2px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.14);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .15s, color .15s;
+    }
+    .add-page-dot:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Inspector ── */
+    .inspector {
+      border-left: 1px solid var(--bd);
+      background: var(--panel);
+      overflow-y: auto;
     }
 
     .insp-empty {
-      flex: 1;
+      padding: 20px;
+    }
+    .insp-empty-box {
+      border: 1px dashed rgba(255,255,255,.10);
+      border-radius: 12px;
+      padding: 36px 20px;
+      text-align: center;
+    }
+    .insp-empty-icon {
+      width: 44px; height: 44px;
+      margin: 0 auto 12px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.05);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--dim);
+      font-size: 22px;
+      font-weight: 300;
+    }
+    .insp-empty-title { font-size: 13px; font-weight: 600; color: #c3c9d4; margin-bottom: 6px; }
+    .insp-empty-sub   { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+    .insp-body { padding: 18px; }
+
+    /* Preview tile */
+    .insp-preview {
       display: flex;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: #7f8794;
-      font-size: 13px;
-      line-height: 1.55;
-      padding: 40px 12px;
+      gap: 14px;
+      margin-bottom: 20px;
     }
+    .insp-tile {
+      width: 58px; height: 58px;
+      flex: none;
+      border-radius: 13px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.4);
+    }
+    .insp-tile-icon  { font-size: 20px; line-height: 1; }
+    .insp-tile-label { font-size: 9px; font-weight: 600; color: #fff; line-height: 1; text-align: center; max-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .insp-heading {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 18px;
-      flex-shrink: 0;
-    }
+    .insp-meta-type { font-size: 14px; font-weight: 600; }
+    .insp-meta-pos  { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
-    .insp-section {
-      margin-bottom: 16px;
-    }
+    /* Fields */
+    .insp-section { margin-bottom: 16px; }
 
     .insp-label {
       font-size: 11px;
-      letter-spacing: .08em;
+      letter-spacing: .07em;
       text-transform: uppercase;
-      color: #7f8794;
-      margin-bottom: 6px;
+      color: var(--muted);
       font-weight: 600;
+      margin-bottom: 6px;
     }
 
     .insp-input {
       width: 100%;
-      box-sizing: border-box;
       padding: 9px 11px;
       border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: #0f1116;
-      color: #e8eaed;
+      border: 1px solid var(--bd-l);
+      background: var(--bg);
+      color: var(--text);
       font-size: 13px;
-      font-family: 'IBM Plex Sans', sans-serif;
       outline: none;
-      transition: border-color 0.15s;
+      font-family: inherit;
+      transition: border-color .15s;
     }
+    .insp-input:focus { border-color: var(--accent); }
+    .insp-input.mono { font-family: var(--mono); font-size: 11.5px; }
 
-    .insp-input:focus { border-color: #e2640f; }
-
-    .insp-input.mono {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px;
-    }
-
-    textarea.insp-input {
-      resize: vertical;
-      min-height: 72px;
-    }
-
+    textarea.insp-input { resize: vertical; min-height: 68px; }
     select.insp-input {
       cursor: pointer;
       appearance: none;
@@ -386,205 +482,184 @@
     }
 
     /* Action type pills */
-    .action-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 0;
-    }
+    .type-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0; }
 
-    .action-pill {
+    .type-pill {
       cursor: pointer;
-      padding: 6px 10px;
+      padding: 5px 9px;
       border-radius: 7px;
       font-size: 12px;
       font-weight: 500;
-      border: 1px solid rgba(255,255,255,0.12);
+      border: 1px solid var(--bd-l);
       background: transparent;
-      color: #9aa1ad;
-      font-family: 'IBM Plex Sans', sans-serif;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      color: var(--muted);
+      font-family: inherit;
+      transition: background .12s, color .12s, border-color .12s;
     }
-
-    .action-pill:hover {
-      border-color: rgba(226,100,15,0.5);
-      color: #e2640f;
-    }
-
-    .action-pill.active {
-      background: rgba(226,100,15,0.18);
-      border-color: rgba(226,100,15,0.6);
-      color: #e2640f;
+    .type-pill:hover { border-color: rgba(255,255,255,.22); color: var(--text); }
+    .type-pill.active {
+      background: rgba(226,100,15,.18);
+      border-color: rgba(226,100,15,.5);
+      color: var(--accent);
       font-weight: 600;
     }
 
     /* REST sub-fields */
-    .rest-fields {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .rest-fields { display: flex; flex-direction: column; gap: 6px; }
 
-    /* Color palette */
-    .color-palette {
+    /* Icon picker */
+    .icon-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 5px;
     }
+    .icon-btn {
+      width: 31px; height: 31px;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid var(--bd-l);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .12s, border-color .12s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,.08); border-color: var(--bd-m); }
+    .icon-btn.selected { border-color: var(--accent); background: rgba(226,100,15,.15); }
 
-    .color-swatch {
-      width: 27px;
-      height: 27px;
+    /* Color palette */
+    .color-palette { display: flex; flex-wrap: wrap; gap: 7px; }
+    .color-sw {
+      width: 27px; height: 27px;
       border-radius: 7px;
       cursor: pointer;
       border: 2px solid transparent;
-      transition: transform 0.1s, border-color 0.15s;
-      flex-shrink: 0;
+      transition: transform .1s, border-color .12s;
     }
+    .color-sw:hover { transform: scale(1.12); }
+    .color-sw.selected { border-color: #fff; }
 
-    .color-swatch:hover { transform: scale(1.15); }
-
-    .color-swatch.selected {
-      border-color: #e2640f;
-      box-shadow: 0 0 0 1px rgba(226,100,15,0.4);
+    /* Clear key */
+    .btn-clear-key {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(236,106,94,.4);
+      background: rgba(236,106,94,.12);
+      color: #f0a89f;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 500;
+      font-family: inherit;
+      margin-top: 4px;
+      transition: background .12s;
     }
+    .btn-clear-key:hover { background: rgba(236,106,94,.2); }
 
-    /* Delete + Save row */
-    .insp-actions {
-      margin-top: auto;
-      padding-top: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    /* Save flash */
+    .save-flash {
+      font-size: 11.5px;
+      color: #61c554;
+      text-align: center;
+      opacity: 0;
+      transition: opacity .3s;
+      margin-top: 8px;
     }
+    .save-flash.show { opacity: 1; }
 
-    .btn-save {
+    /* Save button */
+    .btn-save-key {
       width: 100%;
       padding: 9px;
       border-radius: 8px;
       border: none;
-      background: #e2640f;
+      background: var(--accent);
       color: #fff;
       cursor: pointer;
       font-size: 13px;
       font-weight: 600;
-      font-family: 'IBM Plex Sans', sans-serif;
-      transition: opacity 0.15s;
+      font-family: inherit;
+      margin-top: 12px;
+      transition: opacity .15s;
     }
-
-    .btn-save:hover { opacity: 0.88; }
-
-    .btn-delete {
-      width: 100%;
-      padding: 9px;
-      border-radius: 8px;
-      border: 1px solid rgba(236,106,94,0.4);
-      background: rgba(236,106,94,0.10);
-      color: #f0a89f;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      font-family: 'IBM Plex Sans', sans-serif;
-      transition: background 0.15s;
-    }
-
-    .btn-delete:hover { background: rgba(236,106,94,0.18); }
-
-    .save-flash {
-      font-size: 12px;
-      color: #61c554;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.3s;
-      height: 0;
-      overflow: hidden;
-    }
-
-    .save-flash.show {
-      opacity: 1;
-      height: auto;
-    }
+    .btn-save-key:hover { opacity: .88; }
 
     /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
   </style>
 </head>
 <body>
 
-<!-- Titlebar -->
+<!-- ── Title bar ── -->
 <div class="titlebar">
   <div class="traffic-lights">
-    <div class="traffic-dot red"></div>
-    <div class="traffic-dot yellow"></div>
-    <div class="traffic-dot green"></div>
+    <div class="tl-dot r"></div>
+    <div class="tl-dot y"></div>
+    <div class="tl-dot g"></div>
   </div>
-  <span class="titlebar-title">Stream Deck Manager</span>
+  <div class="app-icon">
+    <div class="app-icon-dots">
+      <span></span><span></span>
+      <span></span><span></span>
+    </div>
+  </div>
+  <span class="app-title">Stream Deck</span>
+
+  <div class="page-tabs" id="pageTabs"></div>
+  <button class="add-page-btn" id="addPageBtn" title="New page">+</button>
+
+  <div class="titlebar-right">
+    <div class="agent-pill">
+      <div class="agent-dot"></div>
+      <span class="agent-label">Local session</span>
+    </div>
+    <div class="layout-switcher" id="layoutSwitcher"></div>
+  </div>
 </div>
 
-<!-- Main 3-column layout -->
-<div class="main">
+<!-- ── Body ── -->
+<div class="body">
 
-  <!-- Left rail: connection + pages -->
-  <div class="left-rail">
-    <div class="agent-status-box">
-      <div class="agent-status-row">
-        <div class="status-dot disconnected" id="agentDot"></div>
-        <span class="agent-status-label" id="agentLabel">Not connected</span>
+  <!-- Library -->
+  <div class="library">
+    <div class="lib-header">
+      <div class="lib-section-label">Actions</div>
+      <input class="lib-search" id="libSearch" placeholder="Search actions…" oninput="filterLibrary(this.value)">
+    </div>
+    <div class="lib-list" id="libList"></div>
+  </div>
+
+  <!-- Stage -->
+  <div class="stage">
+    <div class="stage-header">
+      <span class="stage-profile-name" id="stageProfileName">Page 1</span>
+      <span class="stage-meta" id="stageMeta"></span>
+    </div>
+    <div class="stage-content">
+      <div class="deck-plate">
+        <div class="key-grid" id="keyGrid"></div>
       </div>
-      <div class="agent-ip" id="agentIp" style="display:none"></div>
-    </div>
-
-    <div>
-      <div class="section-label">Pages</div>
-      <div class="page-list" id="pageList"></div>
-    </div>
-
-    <button class="add-page-btn" id="addPageBtn">+ New page</button>
-  </div>
-
-  <!-- Center: key grid -->
-  <div class="center">
-    <div class="center-header">
-      <div>
-        <div class="profile-title" id="centerTitle">Page 1</div>
-        <div class="profile-sub" id="centerSub">0 keys configured</div>
-      </div>
-      <div class="layout-switcher" id="layoutSwitcher"></div>
-    </div>
-
-    <div class="grid-stage">
-      <div class="btn-grid" id="btnGrid"></div>
+      <div class="page-dots" id="pageDots"></div>
     </div>
   </div>
 
-  <!-- Right inspector -->
-  <div class="inspector" id="inspector">
-    <div class="insp-empty">Select a key to edit it, or click an empty key to add a new action.</div>
-  </div>
+  <!-- Inspector -->
+  <div class="inspector" id="inspector"></div>
 
 </div>
 
 <script>
-  // ── State ──────────────────────────────────────────────────────
+  // ── State ────────────────────────────────────────────────────
   let config = { grid: '3x2', pages: [[]], currentPage: 0 };
   let activePage = 0;
   let selectedIdx = null;
-  let agentConnected = false;
-  let agentInfo = null;
 
   const LAYOUTS = [
     { key: '3x2', label: '3×2' },
     { key: '4x2', label: '4×2' },
     { key: '4x3', label: '4×3' },
-  ];
-
-  const COLOR_SWATCHES = [
-    '#ffffff', '#f5f5f5', '#ef9a9a', '#f48fb1',
-    '#ce93d8', '#90caf9', '#80cbc4', '#a5d6a7',
-    '#fff176', '#ffcc80', '#ffab91', '#bcaaa4',
-    '#e2640f', '#1565c0', '#388e3c', '#6a1b9a',
   ];
 
   const ACTION_TYPES = [
@@ -607,19 +682,39 @@
     { value: 'mute',       label: 'Mute'           },
   ];
 
-  const ACTION_PLACEHOLDERS = {
-    shortcut: 'e.g. cmd+shift+s',
-    launch:   '/Applications/Safari.app',
-    text:     'Text to type…',
-    url:      'https://example.com',
-    script:   'echo hello',
-    rtsp:     'rtsp://192.168.1.x:554/stream',
-  };
+  const ACTION_LIBRARY = [
+    { category: 'Keyboard & Text', items: [
+      { key: 'shortcut', label: 'Keystroke',    hint: 'Trigger a keyboard shortcut', glyph: '⌘',  color: '#2563eb' },
+      { key: 'text',     label: 'Type Text',    hint: 'Type a text snippet',          glyph: 'Aa', color: '#be185d' },
+    ]},
+    { category: 'System', items: [
+      { key: 'launch',   label: 'Launch App',   hint: 'Open an application',          glyph: '⊞',  color: '#7c3aed' },
+      { key: 'media',    label: 'Media Control', hint: 'Play, pause, volume & more',  glyph: '▷',  color: '#0891b2' },
+      { key: 'script',   label: 'Run Script',   hint: 'Execute a shell command',      glyph: '$',  color: '#059669' },
+    ]},
+    { category: 'Web & Network', items: [
+      { key: 'url',      label: 'Open URL',     hint: 'Open a web address',           glyph: '↗',  color: '#ea580c' },
+      { key: 'rest',     label: 'REST Request', hint: 'Send an HTTP request',         glyph: '{}', color: '#ca8a04' },
+      { key: 'rtsp',     label: 'Camera Stream', hint: 'Show an RTSP video feed',    glyph: '◉',  color: '#b45309' },
+    ]},
+  ];
 
-  // ── Grid helpers ───────────────────────────────────────────────
+  const ICON_OPTIONS = [
+    '⚡','🎵','📷','🌐','📁','🔧','⌨','🖥',
+    '▶','⏸','⏭','⏮','🔊','🔇','📝','🔗',
+    '🚀','🏠','🎬','💻','📡','🎙','🔴','🔔',
+    '🌙','☀','🔒','⏰','📊','💡','🎮','⚙',
+  ];
+
+  const COLOR_PALETTE = [
+    '#2d6ced','#7c3aed','#0891b2','#059669',
+    '#ea580c','#e2640f','#ca8a04','#be185d',
+    '#374151','#6b7280','#d1d5db','#ffffff',
+  ];
+
+  // ── Grid helpers ──────────────────────────────────────────────
   function gridDims(grid) {
-    const map = { '3x2': [3,2], '4x2': [4,2], '4x3': [4,3] };
-    return map[grid] || [3,2];
+    return { '3x2': [3,2], '4x2': [4,2], '4x3': [4,3] }[grid] || [3,2];
   }
 
   function totalCells(grid) {
@@ -627,42 +722,96 @@
     return c * r;
   }
 
-  // ── Agent status (pushed from main on config-update events) ────
-  function updateAgentStatusUI() {
-    const dot = document.getElementById('agentDot');
-    const lbl = document.getElementById('agentLabel');
-    const ip  = document.getElementById('agentIp');
-    dot.className = 'status-dot ' + (agentConnected ? 'connected' : 'disconnected');
-    lbl.textContent = agentConnected ? 'Agent connected' : 'Not connected';
-    if (agentConnected && agentInfo) {
-      ip.style.display = '';
-      ip.textContent = (agentInfo.host || '') + ':9021';
-    } else {
-      ip.style.display = 'none';
-    }
+  function computeKeyPx() {
+    // Available space inside deck-plate at 920×580, library 200, inspector 278
+    // Stage width: 920-200-278=442, stage padding 22px each = 398, plate padding 26px each = 346
+    // Stage height: 580-44(bar)=536, header ~36, content padding 26 = 474, plate padding 26 = 422
+    const PLATE_W = 346, PLATE_H = 420;
+    const [cols, rows] = gridDims(config.grid || '3x2');
+    const gap = 10;
+    const kw = Math.floor((PLATE_W - (cols - 1) * gap) / cols);
+    const kh = Math.floor((PLATE_H - (rows - 1) * gap) / rows);
+    return Math.min(kw, kh);
   }
 
-  // ── Render page list (left rail) ───────────────────────────────
-  function renderPageList() {
-    const list = document.getElementById('pageList');
-    const pages = config.pages || [[]];
-    const grid  = config.grid || '3x2';
-    const total = totalCells(grid);
-
+  // ── Library ───────────────────────────────────────────────────
+  function renderLibrary() {
+    const list = document.getElementById('libList');
     list.innerHTML = '';
-    pages.forEach((page, i) => {
-      const filled = (page || []).filter(b => b && (b.label || b.action)).length;
-      const el = document.createElement('div');
-      el.className = 'page-item' + (i === activePage ? ' active' : '');
-      el.innerHTML = `
-        <span class="page-item-name">Page ${i + 1}</span>
-        <span class="page-item-count">${filled}/${total}</span>`;
-      el.addEventListener('click', () => {
+
+    ACTION_LIBRARY.forEach(cat => {
+      const catEl = document.createElement('div');
+      catEl.className = 'lib-category';
+
+      const label = document.createElement('div');
+      label.className = 'lib-cat-label';
+      label.textContent = cat.category;
+      catEl.appendChild(label);
+
+      const itemsEl = document.createElement('div');
+      itemsEl.className = 'lib-items';
+
+      cat.items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'lib-item';
+        el.dataset.key = item.key;
+        el.innerHTML = `
+          <div class="lib-glyph" style="background:${item.color}">${item.glyph}</div>
+          <div class="lib-info">
+            <div class="lib-name">${item.label}</div>
+            <div class="lib-hint">${item.hint}</div>
+          </div>`;
+        el.addEventListener('click', () => applyLibraryItem(item));
+        itemsEl.appendChild(el);
+      });
+
+      catEl.appendChild(itemsEl);
+      list.appendChild(catEl);
+    });
+  }
+
+  function filterLibrary(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.lib-item').forEach(el => {
+      const name = el.querySelector('.lib-name').textContent.toLowerCase();
+      const hint = el.querySelector('.lib-hint').textContent.toLowerCase();
+      el.classList.toggle('hidden-item', q !== '' && !name.includes(q) && !hint.includes(q));
+    });
+    // Hide empty categories
+    document.querySelectorAll('.lib-category').forEach(cat => {
+      const visible = [...cat.querySelectorAll('.lib-item')].some(i => !i.classList.contains('hidden-item'));
+      cat.style.display = visible ? '' : 'none';
+    });
+  }
+
+  function applyLibraryItem(item) {
+    if (selectedIdx === null) return; // no key selected — nothing to do
+    const pages = config.pages || [[]];
+    const btn = pages[activePage]?.[selectedIdx] || {};
+    const merged = { ...btn, action_type: item.key, action: btn.action || '' };
+    if (!merged.label) merged.label = item.label;
+    if (!merged.color) merged.color = item.color;
+    if (!merged.icon)  merged.icon  = ICON_OPTIONS[0];
+    saveButton(merged);
+    renderInspector();
+  }
+
+  // ── Title bar ─────────────────────────────────────────────────
+  function renderTitleBar() {
+    // Page tabs
+    const tabs = document.getElementById('pageTabs');
+    const pages = config.pages || [[]];
+    tabs.innerHTML = '';
+    pages.forEach((_, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'page-tab' + (i === activePage ? ' active' : '');
+      btn.textContent = `Page ${i + 1}`;
+      btn.addEventListener('click', () => {
         activePage = i;
         selectedIdx = null;
         renderAll();
       });
-      list.appendChild(el);
+      tabs.appendChild(btn);
     });
 
     // Add page button
@@ -674,16 +823,13 @@
       window.electronAPI.setConfig(config);
       renderAll();
     };
-  }
 
-  // ── Render layout switcher ─────────────────────────────────────
-  function renderLayoutSwitcher() {
+    // Layout switcher
     const switcher = document.getElementById('layoutSwitcher');
-    const current  = config.grid || '3x2';
     switcher.innerHTML = '';
     LAYOUTS.forEach(({ key, label }) => {
       const btn = document.createElement('button');
-      btn.className = 'layout-btn' + (key === current ? ' active' : '');
+      btn.className = 'layout-btn' + (key === (config.grid || '3x2') ? ' active' : '');
       btn.textContent = label;
       btn.addEventListener('click', () => {
         config.grid = key;
@@ -695,32 +841,27 @@
     });
   }
 
-  // ── Render center header ───────────────────────────────────────
-  function renderCenterHeader() {
+  // ── Stage ─────────────────────────────────────────────────────
+  function renderStage() {
     const pages = config.pages || [[]];
     const grid  = config.grid || '3x2';
-    const total = totalCells(grid);
+    const [cols, rows] = gridDims(grid);
+    const total = cols * rows;
     const page  = pages[activePage] || [];
     const filled = page.filter(b => b && (b.label || b.action)).length;
 
-    document.getElementById('centerTitle').textContent = `Page ${activePage + 1}`;
-    document.getElementById('centerSub').textContent =
-      `${filled} of ${total} keys configured`;
+    document.getElementById('stageProfileName').textContent = `Page ${activePage + 1}`;
+    document.getElementById('stageMeta').textContent = `${filled} of ${total} keys · ${grid}`;
+
+    renderGrid();
+    renderPageDots();
   }
 
-  // ── Render button grid ─────────────────────────────────────────
   function renderGrid() {
-    const grid   = document.getElementById('btnGrid');
+    const grid = document.getElementById('keyGrid');
     const [cols, rows] = gridDims(config.grid || '3x2');
-    const total  = cols * rows;
-
-    // Compute key size to fit the stage
-    // Stage is ~(920-200-290-44-40-2)px wide and ~(580-42-40-2)px tall, with 22px padding each side
-    const stageW = 920 - 200 - 290 - 44; // approx center width
-    const stageH = 580 - 42 - 40 - 44;   // approx available height
-    const maxKeyW = Math.floor((stageW - 44 - (cols - 1) * 8) / cols);
-    const maxKeyH = Math.floor((stageH - 44 - (rows - 1) * 8) / rows);
-    const keyPx = Math.min(maxKeyW, maxKeyH, 90);
+    const total = cols * rows;
+    const keyPx = computeKeyPx();
 
     grid.style.gridTemplateColumns = `repeat(${cols}, ${keyPx}px)`;
     grid.style.gridTemplateRows    = `repeat(${rows}, ${keyPx}px)`;
@@ -730,29 +871,34 @@
 
     for (let i = 0; i < total; i++) {
       const btn = buttons[i];
+      const filled = btn && (btn.label || btn.action);
+
       const cell = document.createElement('div');
-      cell.className = 'btn-cell' + (i === selectedIdx ? ' selected' : '');
+      cell.className = 'key-cell' + (i === selectedIdx ? ' selected' : '');
       cell.style.width  = keyPx + 'px';
       cell.style.height = keyPx + 'px';
-      cell.style.background = btn && btn.color ? btn.color : '#1e2029';
-      cell.style.border = btn ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.05)';
+      if (filled) {
+        cell.style.background = btn.color || '#374151';
+        cell.style.border = '1px solid rgba(255,255,255,.12)';
+      }
 
-      if (btn && (btn.label || btn.action)) {
+      if (filled) {
+        if (btn.icon) {
+          const icon = document.createElement('span');
+          icon.className = 'key-glyph';
+          icon.style.fontSize = '20px';
+          icon.textContent = btn.icon;
+          cell.appendChild(icon);
+        }
         if (btn.label) {
           const lbl = document.createElement('span');
-          lbl.className = 'btn-cell-label';
+          lbl.className = 'key-label';
           lbl.textContent = btn.label;
           cell.appendChild(lbl);
         }
-        if (btn.action_type) {
-          const tag = document.createElement('span');
-          tag.className = 'btn-cell-tag';
-          tag.textContent = btn.action_type;
-          cell.appendChild(tag);
-        }
       } else {
         const plus = document.createElement('span');
-        plus.className = 'btn-cell-plus';
+        plus.className = 'key-empty-plus';
         plus.textContent = '+';
         cell.appendChild(plus);
       }
@@ -767,85 +913,195 @@
     }
   }
 
-  // ── Render inspector ───────────────────────────────────────────
+  function renderPageDots() {
+    const container = document.getElementById('pageDots');
+    const pages = config.pages || [[]];
+    container.innerHTML = '';
+
+    if (pages.length > 1) {
+      const lbl = document.createElement('span');
+      lbl.className = 'page-dots-label';
+      lbl.textContent = 'Pages';
+      container.appendChild(lbl);
+    }
+
+    pages.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'page-dot' + (i === activePage ? ' active' : '');
+      dot.style.width = i === activePage ? '26px' : '9px';
+      dot.title = `Page ${i + 1}`;
+      dot.addEventListener('click', () => {
+        activePage = i;
+        selectedIdx = null;
+        renderAll();
+      });
+      container.appendChild(dot);
+    });
+
+    const addDot = document.createElement('button');
+    addDot.className = 'add-page-dot';
+    addDot.title = 'Add page';
+    addDot.textContent = '+';
+    addDot.addEventListener('click', () => {
+      if (!config.pages) config.pages = [[]];
+      config.pages.push([]);
+      activePage = config.pages.length - 1;
+      selectedIdx = null;
+      window.electronAPI.setConfig(config);
+      renderAll();
+    });
+    container.appendChild(addDot);
+  }
+
+  // ── Inspector ─────────────────────────────────────────────────
   function renderInspector() {
     const panel = document.getElementById('inspector');
 
     if (selectedIdx === null) {
-      panel.innerHTML = '<div class="insp-empty">Select a key to edit it, or click an empty key to add a new action.</div>';
+      panel.innerHTML = `
+        <div class="insp-empty">
+          <div class="insp-empty-box">
+            <div class="insp-empty-icon">+</div>
+            <div class="insp-empty-title">No key selected</div>
+            <div class="insp-empty-sub">Click a key to edit it, or click an empty key to add a new action.</div>
+          </div>
+        </div>`;
       return;
     }
 
     const buttons = (config.pages || [[]])[activePage] || [];
-    const btn = buttons[selectedIdx] || { label: '', action_type: 'shortcut', action: '', color: '#ffffff' };
+    const btn = buttons[selectedIdx] || { label: '', action_type: 'shortcut', action: '', color: '#374151', icon: '' };
     const currentType  = btn.action_type || 'shortcut';
-    const currentColor = btn.color || '#ffffff';
+    const currentColor = btn.color || '#374151';
+    const currentIcon  = btn.icon  || '';
 
     let restParsed = {};
     if (currentType === 'rest') {
       try { restParsed = JSON.parse(btn.action || '{}'); } catch { /**/ }
     }
 
-    // Build inspector HTML
+    const typeLabel = ACTION_TYPES.find(t => t.key === currentType)?.label || currentType;
+
     panel.innerHTML = `
-      <div class="insp-heading">Edit key</div>
+      <div class="insp-body">
 
-      <div class="insp-section">
-        <div class="insp-label">Title</div>
-        <input class="insp-input" id="inspLabel" type="text" value="${escHtml(btn.label || '')}" placeholder="Key label">
-      </div>
-
-      <div class="insp-section">
-        <div class="insp-label">Action</div>
-        <div class="action-pills" id="actionPills">
-          ${ACTION_TYPES.map(t =>
-            `<button class="action-pill${t.key === currentType ? ' active' : ''}" data-type="${t.key}">${t.label}</button>`
-          ).join('')}
+        <div class="insp-preview">
+          <div class="insp-tile" id="inspTile" style="background:${currentColor}">
+            <span class="insp-tile-icon" id="inspTileIcon">${currentIcon || '⚡'}</span>
+            <span class="insp-tile-label" id="inspTileLabel">${escHtml(btn.label || '')}</span>
+          </div>
+          <div>
+            <div class="insp-meta-type" id="inspMetaType">${typeLabel}</div>
+            <div class="insp-meta-pos">Key ${selectedIdx + 1} · Page ${activePage + 1}</div>
+          </div>
         </div>
-      </div>
 
-      <div class="insp-section" id="actionValueSection">
-        ${buildActionField(currentType, btn.action || '', restParsed)}
-      </div>
-
-      <div class="insp-section">
-        <div class="insp-label">Key color</div>
-        <div class="color-palette">
-          ${COLOR_SWATCHES.map(c =>
-            `<div class="color-swatch${c === currentColor ? ' selected' : ''}" style="background:${c}" data-color="${c}"></div>`
-          ).join('')}
+        <div class="insp-section">
+          <div class="insp-label">Title</div>
+          <input class="insp-input" id="inspTitle" type="text"
+                 value="${escHtml(btn.label || '')}" placeholder="Key label"
+                 oninput="document.getElementById('inspTileLabel').textContent=this.value">
         </div>
-      </div>
 
-      <div class="insp-actions">
-        <span class="save-flash" id="saveFlash">Saved!</span>
-        <button class="btn-save" id="saveBtn">Save key</button>
-        <button class="btn-delete" id="deleteBtn">Delete key</button>
+        <div class="insp-section">
+          <div class="insp-label">Action type</div>
+          <div class="type-pills" id="typePills">
+            ${ACTION_TYPES.map(t =>
+              `<button class="type-pill${t.key === currentType ? ' active' : ''}" data-type="${t.key}">${t.label}</button>`
+            ).join('')}
+          </div>
+        </div>
+
+        <div class="insp-section" id="actionSection">
+          ${buildActionField(currentType, btn.action || '', restParsed)}
+        </div>
+
+        <div class="insp-section">
+          <div class="insp-label">Icon</div>
+          <div class="icon-grid">
+            ${ICON_OPTIONS.map(e =>
+              `<button class="icon-btn${e === currentIcon ? ' selected' : ''}" data-icon="${e}">${e}</button>`
+            ).join('')}
+          </div>
+        </div>
+
+        <div class="insp-section">
+          <div class="insp-label">Key color</div>
+          <div class="color-palette">
+            ${COLOR_PALETTE.map(c =>
+              `<div class="color-sw${c === currentColor ? ' selected' : ''}" style="background:${c}" data-color="${c}"></div>`
+            ).join('')}
+          </div>
+        </div>
+
+        <button class="btn-save-key" id="saveBtn">Save key</button>
+        <div class="save-flash" id="saveFlash">Saved ✓</div>
+        <button class="btn-clear-key" id="clearBtn">Clear key</button>
+
       </div>`;
 
-    // Wire action pills
-    panel.querySelectorAll('.action-pill').forEach(pill => {
+    // Wire action type pills
+    panel.querySelectorAll('.type-pill').forEach(pill => {
       pill.addEventListener('click', () => {
-        panel.querySelectorAll('.action-pill').forEach(p => p.classList.remove('active'));
+        panel.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
-        const section = document.getElementById('actionValueSection');
+        document.getElementById('inspMetaType').textContent =
+          ACTION_TYPES.find(t => t.key === pill.dataset.type)?.label || pill.dataset.type;
+        const section = document.getElementById('actionSection');
         section.innerHTML = buildActionField(pill.dataset.type, '', {});
       });
     });
 
-    // Wire color swatches
-    panel.querySelectorAll('.color-swatch').forEach(sw => {
-      sw.addEventListener('click', () => {
-        panel.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-        sw.classList.add('selected');
-        // Live preview on grid
-        const cells = document.querySelectorAll('.btn-cell');
-        if (cells[selectedIdx]) cells[selectedIdx].style.background = sw.dataset.color;
+    // Wire icon buttons
+    panel.querySelectorAll('.icon-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        document.getElementById('inspTileIcon').textContent = btn.dataset.icon;
       });
     });
 
-    document.getElementById('saveBtn').addEventListener('click', saveCurrentButton);
-    document.getElementById('deleteBtn').addEventListener('click', deleteCurrentButton);
+    // Wire color swatches
+    panel.querySelectorAll('.color-sw').forEach(sw => {
+      sw.addEventListener('click', () => {
+        panel.querySelectorAll('.color-sw').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        document.getElementById('inspTile').style.background = sw.dataset.color;
+        // Live preview on grid
+        const cell = document.querySelector(`.key-cell:nth-child(${selectedIdx + 1})`);
+        if (cell) cell.style.background = sw.dataset.color;
+      });
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const label     = document.getElementById('inspTitle')?.value.trim() || '';
+      const typeEl    = document.querySelector('.type-pill.active');
+      const typeKey   = typeEl?.dataset.type || 'shortcut';
+      let action = '';
+      if (typeKey === 'rest') {
+        action = JSON.stringify({
+          method: document.getElementById('restMethod')?.value || 'GET',
+          url:    (document.getElementById('restUrl')?.value || '').trim(),
+          body:   (document.getElementById('restBody')?.value || '').trim(),
+        });
+      } else {
+        action = document.getElementById('actionValue')?.value || '';
+      }
+      const colorEl = document.querySelector('.color-sw.selected');
+      const color   = colorEl?.dataset.color || '#374151';
+      const iconEl  = document.querySelector('.icon-btn.selected');
+      const icon    = iconEl?.dataset.icon || '';
+
+      saveButton({ label, action_type: typeKey, action, color, icon });
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      if (!config.pages || !config.pages[activePage]) return;
+      config.pages[activePage][selectedIdx] = undefined;
+      window.electronAPI.setConfig(config);
+      selectedIdx = null;
+      renderAll();
+    });
   }
 
   function buildActionField(type, action, restParsed) {
@@ -868,124 +1124,81 @@
             ).join('')}
           </select>
           <input class="insp-input mono" id="restUrl" type="text"
-                 value="${escHtml(restParsed.url || '')}" placeholder="http://192.168.1.x/api/endpoint">
+                 value="${escHtml(restParsed.url || '')}" placeholder="http://host/api/endpoint">
           <textarea class="insp-input mono" id="restBody" rows="3"
                     placeholder="Body JSON (optional)">${escHtml(restParsed.body || '')}</textarea>
         </div>`;
     }
-    if (type === 'rtsp') {
-      return `
-        <div class="insp-label">RTSP Stream URL</div>
-        <input class="insp-input mono" id="actionValue" type="text"
-               value="${escHtml(action)}" placeholder="rtsp://192.168.1.x:554/stream">`;
-    }
-    if (type === 'script') {
-      return `
-        <div class="insp-label">Shell command</div>
-        <textarea class="insp-input mono" id="actionValue" rows="3"
-                  placeholder="echo hello">${escHtml(action)}</textarea>`;
-    }
-    if (type === 'text') {
-      return `
-        <div class="insp-label">Text to type</div>
-        <textarea class="insp-input" id="actionValue" rows="3"
-                  placeholder="Hello, World!">${escHtml(action)}</textarea>`;
-    }
-    const label = {
-      shortcut: 'Keyboard shortcut',
-      launch:   'Application path / name',
-      url:      'URL',
-    }[type] || 'Value';
-    return `
-      <div class="insp-label">${label}</div>
-      <input class="insp-input${type === 'shortcut' ? '' : ' mono'}" id="actionValue" type="text"
-             value="${escHtml(action)}" placeholder="${escHtml(ACTION_PLACEHOLDERS[type] || '')}">`;
+    const labels = {
+      shortcut: ['Keystroke',        'Cmd + Shift + 4'],
+      launch:   ['Application path', '/Applications/…'],
+      text:     ['Text to type',     'Hello, World!'],
+      url:      ['URL',              'https://'],
+      script:   ['Shell command',    'echo hello'],
+      rtsp:     ['RTSP stream URL',  'rtsp://host:554/stream'],
+    };
+    const [lbl, ph] = labels[type] || ['Value', ''];
+    const isMono = ['launch','text','url','script','rtsp'].includes(type);
+    const isTA   = ['text','script'].includes(type);
+    return isTA
+      ? `<div class="insp-label">${lbl}</div>
+         <textarea class="insp-input mono" id="actionValue" rows="3"
+                   placeholder="${escHtml(ph)}">${escHtml(action)}</textarea>`
+      : `<div class="insp-label">${lbl}</div>
+         <input class="insp-input${isMono ? ' mono' : ''}" id="actionValue" type="text"
+                value="${escHtml(action)}" placeholder="${escHtml(ph)}">`;
   }
 
-  // ── Save / delete ──────────────────────────────────────────────
-  function saveCurrentButton() {
+  // ── Save helper ───────────────────────────────────────────────
+  function saveButton(btn) {
     if (selectedIdx === null) return;
-
-    const label      = document.getElementById('inspLabel')?.value.trim() || '';
-    const activeType = document.querySelector('.action-pill.active')?.dataset.type || 'shortcut';
-    let action = '';
-
-    if (activeType === 'rest') {
-      action = JSON.stringify({
-        method: document.getElementById('restMethod')?.value || 'GET',
-        url:    (document.getElementById('restUrl')?.value || '').trim(),
-        body:   (document.getElementById('restBody')?.value || '').trim(),
-      });
-    } else {
-      action = document.getElementById('actionValue')?.value || '';
-    }
-
-    const colorEl = document.querySelector('.color-swatch.selected');
-    const color   = colorEl ? colorEl.dataset.color : '#ffffff';
-
     if (!config.pages) config.pages = [[]];
     if (!config.pages[activePage]) config.pages[activePage] = [];
-    config.pages[activePage][selectedIdx] = { label, action_type: activeType, action, color };
-
+    config.pages[activePage][selectedIdx] = btn;
     window.electronAPI.setConfig(config);
     renderGrid();
-    renderPageList();
-    renderCenterHeader();
-
+    renderPageDots();
+    document.getElementById('stageProfileName') &&
+      (document.getElementById('stageMeta').textContent =
+        (() => {
+          const page = config.pages[activePage] || [];
+          const [cols, rows] = gridDims(config.grid || '3x2');
+          const filled = page.filter(b => b && (b.label || b.action)).length;
+          return `${filled} of ${cols * rows} keys · ${config.grid || '3x2'}`;
+        })());
     const flash = document.getElementById('saveFlash');
-    if (flash) {
-      flash.classList.add('show');
-      setTimeout(() => flash.classList.remove('show'), 2000);
-    }
+    if (flash) { flash.classList.add('show'); setTimeout(() => flash.classList.remove('show'), 2000); }
   }
 
-  function deleteCurrentButton() {
-    if (selectedIdx === null) return;
-    if (!config.pages || !config.pages[activePage]) return;
-    config.pages[activePage][selectedIdx] = undefined;
-    window.electronAPI.setConfig(config);
-    selectedIdx = null;
-    renderAll();
-  }
-
-  // ── Render all ─────────────────────────────────────────────────
+  // ── Render all ────────────────────────────────────────────────
   function renderAll() {
-    renderPageList();
-    renderLayoutSwitcher();
-    renderCenterHeader();
-    renderGrid();
+    renderTitleBar();
+    renderStage();
     renderInspector();
   }
 
-  // ── Config update from main ────────────────────────────────────
-  function applyConfig(newConfig, status) {
-    if (newConfig) {
-      config = newConfig;
-      activePage = Math.min(activePage, (config.pages || [[]]).length - 1);
-      if (activePage < 0) activePage = 0;
-      const total = totalCells(config.grid || '3x2');
-      if (selectedIdx !== null && selectedIdx >= total) selectedIdx = null;
-    }
-    if (status !== undefined) {
-      agentConnected = status.connected || false;
-      agentInfo      = status.info || null;
-      updateAgentStatusUI();
-    }
+  // ── Config update ─────────────────────────────────────────────
+  function applyConfig(newConfig) {
+    if (!newConfig) return;
+    config = newConfig;
+    activePage = Math.min(activePage, (config.pages || [[]]).length - 1);
+    if (activePage < 0) activePage = 0;
+    const total = totalCells(config.grid || '3x2');
+    if (selectedIdx !== null && selectedIdx >= total) selectedIdx = null;
     renderAll();
   }
 
-  // ── Utility ────────────────────────────────────────────────────
+  // ── Utility ───────────────────────────────────────────────────
   function escHtml(str) {
     return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ── Init ───────────────────────────────────────────────────────
-  window.electronAPI.getConfig().then(cfg => applyConfig(cfg));
-  window.electronAPI.onConfigUpdate(cfg => applyConfig(cfg));
+  // ── Init ──────────────────────────────────────────────────────
+  renderLibrary();
+  window.electronAPI.getConfig().then(applyConfig);
+  window.electronAPI.onConfigUpdate(applyConfig);
 </script>
 </body>
 </html>
