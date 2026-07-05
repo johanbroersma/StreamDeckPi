@@ -15,9 +15,11 @@ import logging
 import os
 import secrets
 import signal
+import ssl
 import subprocess
 from pathlib import Path
 
+import aiohttp
 from aiohttp import web, WSMsgType
 
 logging.basicConfig(
@@ -34,6 +36,106 @@ PORT       = 7001
 HOST       = '0.0.0.0'
 
 DATA_DIR.mkdir(exist_ok=True)
+
+# ── .env loader ───────────────────────────────────────────────
+
+def _load_env_file():
+    """Load .env from project root into os.environ (python-dotenv not required)."""
+    env_path = Path(__file__).parent.parent / '.env'
+    if not env_path.exists():
+        return
+    for line in env_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, _, val = line.partition('=')
+        key = key.strip()
+        val = val.strip().strip('"\'')
+        if key and key not in os.environ:
+            os.environ[key] = val
+
+_load_env_file()
+
+# ── UniFi Access ──────────────────────────────────────────────
+
+# IMPORTANT: The unlock endpoint path may differ by firmware/API version.
+# Known possibilities:
+#   /api/v1/developer/doors/{id}/unlock
+#   /api/v1/developer/doors/{id}/remote_unlock
+# If unlock buttons return "404", set UNIFI_UNLOCK_PATH=remote_unlock in .env
+# and check the API docs in Access app (Settings > General > Advanced > API Documentation).
+UNIFI_UNLOCK_PATH = os.environ.get('UNIFI_UNLOCK_PATH', 'unlock')
+
+# Shared SSL context — disables cert verification for self-signed UniFi certs
+_UNIFI_SSL = ssl.create_default_context()
+_UNIFI_SSL.check_hostname = False
+_UNIFI_SSL.verify_mode    = ssl.CERT_NONE
+
+
+async def handle_unifi_action(data: dict) -> tuple[bool, str]:
+    """Execute a UniFi Access lock/unlock directly from the Pi server."""
+    try:
+        action = json.loads(data.get('action', '{}'))
+    except (json.JSONDecodeError, TypeError):
+        return False, 'Invalid UniFi action config (bad JSON)'
+
+    command = action.get('command', '')
+    door_id = action.get('door_id', '').strip()
+
+    host  = os.environ.get('UNIFI_HOST', '').strip()
+    port  = os.environ.get('UNIFI_PORT', '12445').strip()
+    token = os.environ.get('UNIFI_API_TOKEN', '').strip()
+
+    if not host:
+        return False, 'UNIFI_HOST not configured in .env'
+    if not token:
+        return False, 'UNIFI_API_TOKEN not configured in .env'
+    if not door_id:
+        return False, 'No Door ID set on this button'
+    if command not in ('lock', 'unlock'):
+        return False, f'Unknown command: {command!r}'
+
+    path_seg = 'lock' if command == 'lock' else UNIFI_UNLOCK_PATH
+    url = f'https://{host}:{port}/api/v1/developer/doors/{door_id}/{path_seg}'
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type':  'application/json',
+    }
+
+    timeout = aiohttp.ClientTimeout(total=8)
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.put(url, headers=headers, ssl=_UNIFI_SSL, timeout=timeout) as resp:
+                try:
+                    body = await resp.json(content_type=None)
+                except Exception:
+                    body = {}
+                msg = body.get('msg') or body.get('message') or ''
+
+                if resp.status == 200:
+                    log.info(f'UniFi {command} door {door_id}: OK')
+                    return True, msg or f'{command.capitalize()} succeeded'
+
+                if resp.status == 404:
+                    if command == 'lock':
+                        log.warning('UniFi lock returned 404 — lock via API is not supported on this firmware')
+                        return False, 'Lock not supported by this firmware (door auto-locks)'
+                    if command == 'unlock' and path_seg == 'unlock':
+                        log.warning('UniFi unlock returned 404 — try UNIFI_UNLOCK_PATH=remote_unlock in .env')
+                        return False, '404 — unlock path may be "remote_unlock" (see .env)'
+
+                err = msg or str(body.get('code', resp.status))
+                log.warning(f'UniFi {command} door {door_id}: HTTP {resp.status} {err}')
+                return False, f'HTTP {resp.status}: {err}'
+
+    except asyncio.TimeoutError:
+        return False, f'Timed out connecting to {host}:{port}'
+    except aiohttp.ClientConnectorError:
+        return False, f'Cannot reach {host}:{port} — check UNIFI_HOST/PORT'
+    except Exception as e:
+        log.error(f'UniFi action error: {e}')
+        return False, str(e)
+
 
 # ── Token management ─────────────────────────────────────────
 
@@ -128,13 +230,23 @@ async def ws_ui_handler(request):
                 mtype = data.get('type')
 
                 if mtype == 'button_press':
-                    sent = await send_agent(data)
-                    if not sent:
+                    if data.get('action_type') == 'unifi_access':
+                        # Handled locally on the Pi — no desktop agent required
+                        ok, msg = await handle_unifi_action(data)
                         await ws.send_str(json.dumps({
                             'type': 'button_feedback',
                             'idx': data.get('idx', -1),
-                            'success': False,
+                            'success': ok,
+                            'message': msg,
                         }))
+                    else:
+                        sent = await send_agent(data)
+                        if not sent:
+                            await ws.send_str(json.dumps({
+                                'type': 'button_feedback',
+                                'idx': data.get('idx', -1),
+                                'success': False,
+                            }))
 
                 elif mtype == 'config_sync':
                     config = data.get('config', {})

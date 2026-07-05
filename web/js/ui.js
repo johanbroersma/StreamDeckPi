@@ -385,6 +385,13 @@ function openEditor(idx) {
       document.getElementById('edit-rest-body').value   = rest.body   || '';
       break;
     }
+    case 'unifi_access': {
+      let unifi = {};
+      try { unifi = JSON.parse(av); } catch { /**/ }
+      document.getElementById('edit-unifi-cmd').value  = unifi.command || 'unlock';
+      document.getElementById('edit-unifi-door').value = unifi.door_id || '';
+      break;
+    }
   }
 
   updateActionFields();
@@ -395,10 +402,12 @@ function openEditor(idx) {
 
 function updateActionFields() {
   const at = document.getElementById('edit-action-type').value;
-  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script', 'rtsp', 'rest'];
+  const allFields = ['shortcut', 'launch', 'media', 'text', 'url', 'script', 'rtsp', 'rest', 'unifi'];
+  // action_type 'unifi_access' maps to div id 'action-unifi'
+  const fieldKey = at === 'unifi_access' ? 'unifi' : at;
   allFields.forEach(f => {
     const el = document.getElementById('action-' + f);
-    if (el) el.classList.toggle('hidden', f !== at);
+    if (el) el.classList.toggle('hidden', f !== fieldKey);
   });
 }
 
@@ -455,6 +464,10 @@ function saveButton() {
       method: document.getElementById('edit-rest-method').value,
       url:    document.getElementById('edit-rest-url').value.trim(),
       body:   document.getElementById('edit-rest-body').value.trim(),
+    }); break;
+    case 'unifi_access': action = JSON.stringify({
+      command: document.getElementById('edit-unifi-cmd').value,
+      door_id: document.getElementById('edit-unifi-door').value.trim(),
     }); break;
   }
 

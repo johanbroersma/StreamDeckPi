@@ -243,6 +243,7 @@
             <option value="script">Run Script</option>
             <option value="rtsp">Camera Stream (RTSP)</option>
             <option value="rest">REST Request</option>
+            <option value="unifi_access">UniFi Access (Door)</option>
           </select>
         </div>
         <div class="field-row" id="action-shortcut">
@@ -279,6 +280,15 @@
         <div class="field-row hidden" id="action-rtsp">
           <label>RTSP URL</label>
           <input type="text" id="edit-rtsp" placeholder="rtsp:// or rtsps://192.168.1.x:554/stream" />
+        </div>
+        <div class="field-row hidden" id="action-unifi">
+          <label>Command</label>
+          <select id="edit-unifi-cmd">
+            <option value="unlock">Unlock (momentary open)</option>
+            <option value="lock">Lock (⚠ may not be supported)</option>
+          </select>
+          <label style="margin-top:8px">Door ID</label>
+          <input type="text" id="edit-unifi-door" placeholder="Run: python3 unifi_door.py list" />
         </div>
         <div class="field-row hidden" id="action-rest">
           <label>Method</label>

@@ -24,4 +24,5 @@ Thumbs.db
 
 # Sensitive / local
 "API Tokens"
+.env
 .claude/

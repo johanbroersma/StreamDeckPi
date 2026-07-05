@@ -49,9 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAgentStatus(connected, info);
   });
 
-  WS.on('button_feedback', ({ idx, success }) => {
+  WS.on('button_feedback', ({ idx, success, message }) => {
     flashButton(idx, success);
-    if (!success) showToast('Action failed');
+    if (!success) showToast(message ? `Failed: ${message}` : 'Action failed');
   });
 
   WS.on('config_updated', () => {
