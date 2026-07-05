@@ -73,7 +73,7 @@ const WS = {
         this._emit('agent_status', msg.connected);
         break;
       case 'button_feedback':
-        this._emit('button_feedback', { idx: msg.idx, success: msg.success });
+        this._emit('button_feedback', { idx: msg.idx, success: msg.success, message: msg.message });
         break;
       case 'config_push':
         // Agent pushed new config (e.g. via desktop app)
