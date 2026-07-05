@@ -7,7 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=7">
+  <script>
+    // Apply saved theme before render to avoid flash
+    try {
+      var _cfg = JSON.parse(localStorage.getItem('streamdeck_config') || '{}');
+      if (_cfg.theme === 'dark') document.documentElement.classList.add('dark');
+    } catch(e) {}
+  </script>
 </head>
 <body>
 
@@ -63,10 +70,10 @@
           <h2>Agent Status</h2>
           <div class="setting-row">
             <div id="agent-status-dot" class="status-dot disconnected" style="flex-shrink:0"></div>
-            <span id="agent-status-label" style="color:rgba(255,255,255,.85);font-size:13px">No agent connected</span>
+            <span id="agent-status-label">No agent connected</span>
           </div>
           <div class="setting-row" id="agent-info-row" style="display:none">
-            <span id="agent-info-text" style="color:rgba(255,255,255,.7);font-size:12px"></span>
+            <span id="agent-info-text"></span>
           </div>
         </div>
 
@@ -90,15 +97,26 @@
         <div class="settings-section">
           <h2>Brightness</h2>
           <div class="setting-row">
-            <span style="color:rgba(255,255,255,.8);font-size:13px;min-width:30px" id="brightness-val">100%</span>
+            <span class="brightness-val" id="brightness-val">100%</span>
             <input type="range" id="brightness" min="10" max="100" value="100"
                    oninput="setBrightness(this.value)" style="flex:1" />
           </div>
         </div>
         <div class="settings-section">
+          <h2>Appearance</h2>
+          <div class="setting-row">
+            <label>Dark Mode</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="dark-mode-toggle" onchange="setTheme(this.checked ? 'dark' : 'light')" />
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+        <div class="settings-section">
           <h2>Button Grid</h2>
           <div class="setting-row">
-            <label style="color:rgba(255,255,255,.85);font-size:14px">Layout</label>
+            <label>Layout</label>
             <select id="grid-size" onchange="setGridSize(this.value)">
               <option value="4x3">4 × 3 (12 buttons)</option>
               <option value="4x2">4 × 2 (8 buttons)</option>
@@ -260,7 +278,7 @@
         </div>
         <div class="field-row hidden" id="action-rtsp">
           <label>RTSP URL</label>
-          <input type="text" id="edit-rtsp" placeholder="rtsp://192.168.1.x:554/stream" />
+          <input type="text" id="edit-rtsp" placeholder="rtsp:// or rtsps://192.168.1.x:554/stream" />
         </div>
         <div class="field-row hidden" id="action-rest">
           <label>Method</label>
@@ -302,10 +320,10 @@
     </div>
   </div>
 
-  <script src="js/config.js?v=6"></script>
-  <script src="js/websocket.js?v=6"></script>
-  <script src="js/ui.js?v=6"></script>
-  <script src="js/wifi.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/config.js?v=7"></script>
+  <script src="js/websocket.js?v=7"></script>
+  <script src="js/ui.js?v=7"></script>
+  <script src="js/wifi.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>

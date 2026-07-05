@@ -364,6 +364,10 @@ async def camera_stream_handler(request):
     url = request.rel_url.query.get('url', '')
     if not url:
         raise web.HTTPBadRequest(reason='Missing url parameter')
+    if not (url.startswith('rtsp://') or url.startswith('rtsps://')):
+        raise web.HTTPBadRequest(reason='URL must start with rtsp:// or rtsps://')
+
+    is_rtsps = url.startswith('rtsps://')
 
     response = web.StreamResponse(headers={
         'Content-Type':  'multipart/x-mixed-replace; boundary=frame',
@@ -372,14 +376,14 @@ async def camera_stream_handler(request):
     })
     await response.prepare(request)
 
+    ffmpeg_args = ['ffmpeg', '-rtsp_transport', 'tcp']
+    if is_rtsps:
+        # Skip TLS certificate verification for self-signed certs on cameras
+        ffmpeg_args += ['-tls_verify', '0']
+    ffmpeg_args += ['-i', url, '-f', 'mjpeg', '-q:v', '5', '-vf', 'fps=15,scale=800:-1', 'pipe:1']
+
     proc = await asyncio.create_subprocess_exec(
-        'ffmpeg',
-        '-rtsp_transport', 'tcp',
-        '-i', url,
-        '-f', 'mjpeg',
-        '-q:v', '5',
-        '-vf', 'fps=15,scale=800:-1',
-        'pipe:1',
+        *ffmpeg_args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
     )

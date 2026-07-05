@@ -7,6 +7,8 @@
 const { exec, execFile } = require('child_process');
 const { shell } = require('electron');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 let robot = null;
 try {
@@ -126,13 +128,85 @@ const MEDIA_KEYS = {
   mute:       'audio_mute',
 };
 
+// macOS key codes for media keys (F7/F8/F9/F10/F11/F12 in media-key mode)
+const MACOS_MEDIA_CODES = {
+  prev:       98,   // F7
+  play_pause: 100,  // F8
+  next:       101,  // F9
+  mute:        74,  // F10
+  vol_down:    73,  // F11
+  vol_up:      72,  // F12
+};
+
+// Windows virtual key codes for media keys
+const WIN_MEDIA_VK = {
+  next:       '0xB0',
+  prev:       '0xB1',
+  play_pause: '0xB3',
+  mute:       '0xAD',
+  vol_down:   '0xAE',
+  vol_up:     '0xAF',
+};
+
 async function executeMedia(command) {
-  if (!robot) throw new Error('robotjs not available');
+  if (!MEDIA_KEYS[command]) throw new Error(`Unknown media command: ${command}`);
 
-  const key = MEDIA_KEYS[command];
-  if (!key) throw new Error(`Unknown media command: ${command}`);
+  // Try robotjs first (fastest, no subprocess)
+  if (robot) {
+    try {
+      robot.keyTap(MEDIA_KEYS[command]);
+      return;
+    } catch (e) {
+      console.warn('[agent] robotjs media key failed, trying OS fallback:', e.message);
+    }
+  }
 
-  robot.keyTap(key);
+  // OS-level fallback
+  if (IS_MAC)  return executeMediaMac(command);
+  if (IS_WIN)  return executeMediaWin(command);
+  throw new Error('robotjs not available and no OS fallback for Linux media keys');
+}
+
+function executeMediaMac(command) {
+  const code = MACOS_MEDIA_CODES[command];
+  if (!code) throw new Error(`No macOS key code for: ${command}`);
+  return new Promise((resolve, reject) => {
+    exec(
+      `osascript -e 'tell application "System Events" to key code ${code}'`,
+      { timeout: 3000 },
+      (err) => err ? reject(new Error(`Media key failed: ${err.message}`)) : resolve()
+    );
+  });
+}
+
+function executeMediaWin(command) {
+  const vk = WIN_MEDIA_VK[command];
+  if (!vk) throw new Error(`No Windows VK for: ${command}`);
+
+  // Write a temp PS1 to avoid shell-quoting issues with the C# heredoc
+  const tmp = path.join(os.tmpdir(), 'sdeck_media.ps1');
+  const script = `Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class MediaKey {
+  [DllImport("user32.dll")]
+  public static extern void keybd_event(byte vk, byte scan, uint flags, IntPtr extra);
+  public static void Press(byte vk) {
+    keybd_event(vk, 0, 0, IntPtr.Zero);
+    keybd_event(vk, 0, 2, IntPtr.Zero);
+  }
+}
+'@
+[MediaKey]::Press(${vk})
+`;
+  return new Promise((resolve, reject) => {
+    try { fs.writeFileSync(tmp, script); } catch (e) { reject(e); return; }
+    exec(
+      `powershell -ExecutionPolicy Bypass -File "${tmp}"`,
+      { timeout: 8000 },
+      (err) => err ? reject(new Error(`Media key failed: ${err.message}`)) : resolve()
+    );
+  });
 }
 
 // ── Type text ──────────────────────────────────────────────

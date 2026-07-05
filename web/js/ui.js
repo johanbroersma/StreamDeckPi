@@ -537,6 +537,7 @@ function populateSettingsForm() {
   document.getElementById('brightness').value     = brightness;
   document.getElementById('brightness-val').textContent = brightness + '%';
   document.getElementById('grid-size').value      = Config.get('grid') || '3x2';
+  applyTheme(Config.get('theme') || 'light');
 }
 
 function updateAgentStatus(connected, info) {
@@ -553,6 +554,23 @@ function updateAgentStatus(connected, info) {
   } else {
     row.style.display = 'none';
   }
+}
+
+// ── Theme ───────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  const toggle = document.getElementById('dark-mode-toggle');
+  if (toggle) toggle.checked = (theme === 'dark');
+}
+
+function setTheme(theme) {
+  Config.set('theme', theme);
+  applyTheme(theme);
 }
 
 // ── Brightness ──────────────────────────────────────────────
